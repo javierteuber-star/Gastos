@@ -506,7 +506,8 @@ var dd = String(hoyFecha.getDate()).padStart(2,"0");
 document.getElementById("fechaInput").value = yyyy+"-"+mm+"-"+dd;
 
 actualizarBtns();
-cargarMes();
+// Precargar últimos 12 meses para tendencia, luego cargar mes actual
+precargarTendencia().then(function(){ cargarMes(); });
 </script>
 </body>
 </html>
