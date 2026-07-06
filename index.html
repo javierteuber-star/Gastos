@@ -218,8 +218,8 @@ async function cargarMes(){
     if(!resResp.ok) throw new Error(resResp.error||"Error en Resumen");
     if(!movResp.ok) throw new Error(movResp.error||"Error en Movimientos");
     var r=resResp.data||{};
-    function n(k){ var v=r[k]; return v?Math.abs(parseFloat(String(v).replace(/[$.]/g,"").replace(",","."))||0):0; }
-    function nSigned(k){ var v=r[k]; return v?parseFloat(String(v).replace(/[$.]/g,"").replace(",","."))||0:0; }
+    function n(k){ var v=r[k]; if(typeof v === "number") return Math.abs(v); if(!v||v==="") return 0; return Math.abs(parseFloat(String(v).replace(/[$. ]/g,"").replace(",","."))||0); }
+    function nSigned(k){ var v=r[k]; if(typeof v === "number") return v; if(!v||v==="") return 0; return parseFloat(String(v).replace(/[$. ]/g,"").replace(",","."))||0; }
     datosMes={
       ingreso:n("Ingreso"), meta:0, saldoInicial:0,
       ahorro:nSigned("Ahorro"), gastoTotal:n("Total Gastos"),
