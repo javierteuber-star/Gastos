@@ -114,7 +114,8 @@
       <select id="catInput"><option value="Almuerzo">Almuerzo</option><option value="Auto">Auto</option><option value="Bienestar">Bienestar</option><option value="Casa">Casa</option><option value="Comida - Casa">Comida - Casa</option><option value="Cuidadora">Cuidadora</option><option value="Cuota Auto">Cuota Auto</option><option value="Estacionamiento">Estacionamiento</option><option value="Farmacia">Farmacia</option><option value="Financieros">Financieros</option><option value="Fondo Reserva">Fondo Reserva</option><option value="Gasto Comun">Gasto Comun</option><option value="Giro Cajero">Giro Cajero</option><option value="Luna de miel">Luna de miel</option><option value="Matrimonio">Matrimonio</option><option value="Movistar">Movistar</option><option value="Nana">Nana</option><option value="Ocio">Ocio</option><option value="Otros">Otros</option><option value="Pedir Comida">Pedir Comida</option><option value="Perros">Perros</option><option value="Regalos">Regalos</option><option value="Ropa">Ropa</option><option value="Seguro Auto">Seguro Auto</option><option value="Sueldo">Sueldo</option><option value="Taxi">Taxi</option><option value="Unicef">Unicef</option><option value="Viajes">Viajes</option></select>
       <select id="origenInput"><option value="TC Santander">TC Santander</option><option value="TC CMR">TC CMR</option><option value="TC Cencosud">TC Cencosud</option><option value="Manuales">Manuales</option></select>
       <input type="text" id="comentarioInput" placeholder="Comentario (opcional)" maxlength="80">
-      <input type="number" id="cuotasInput" value="1" min="1" max="48" placeholder="Cuotas">
+      <input type="date" id="fechaInput">
+      <input type="number" id="cuotasInput" min="1" max="48" placeholder="Nro Cuotas" onfocus="if(!this.value)this.value=1">
       <button class="submit" id="btnAgregar">Agregar gasto</button>
     </div>
   </div>
@@ -409,10 +410,10 @@ document.getElementById("btnAgregar").addEventListener("click",async function(){
   if(!monto||monto<=0){ status("Ingresa un monto válido","error"); return; }
   status("Guardando en Sheets...");
   try{
-    var hoy=new Date();
-    var dia=String(hoy.getDate()).padStart(2,"0");
-    var mesN=String(mesActual).padStart(2,"0");
-    var fecha=dia+"/"+mesN+"/"+anioActual;
+    var fechaVal=document.getElementById("fechaInput").value||new Date().toISOString().slice(0,10);
+    var partesFecha=fechaVal.split("-");
+    var fecha=partesFecha[2]+"/"+partesFecha[1]+"/"+partesFecha[0];
+    var hoy=new Date(fechaVal+"T12:00:00");
     var montoCuota=Math.round(-monto/cuotas);
     var mesInicio=MESES[mesActual-1];
     var mesFinalIdx=(mesActual-1+cuotas-1)%12;
@@ -467,6 +468,13 @@ document.getElementById("fotoInput").addEventListener("change",async function(e)
   }catch(err){ statusEl.textContent="❌ No pude leer la foto"; console.error(err); }
   e.target.value="";
 });
+
+// Setear fecha de hoy por defecto
+var hoyFecha = new Date();
+var yyyy = hoyFecha.getFullYear();
+var mm = String(hoyFecha.getMonth()+1).padStart(2,"0");
+var dd = String(hoyFecha.getDate()).padStart(2,"0");
+document.getElementById("fechaInput").value = yyyy+"-"+mm+"-"+dd;
 
 actualizarBtns();
 cargarMes();
