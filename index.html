@@ -164,13 +164,13 @@ function status(msg,tipo){
 }
 
 async function api(params){
-  var qs=Object.entries(params).map(function(e){return encodeURIComponent(e[0])+"="+encodeURIComponent(e[1]);}).join("&");
+  params.token="javi2026gastos"; var qs=Object.entries(params).map(function(e){return encodeURIComponent(e[0])+"="+encodeURIComponent(e[1]);}).join("&");
   var r=await fetch(SCRIPT_URL+"?"+qs);
   return await r.json();
 }
 
 async function apiPost(body){
-  var r=await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(body)});
+  body.token="javi2026gastos"; var r=await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(body)});
   return await r.json();
 }
 
@@ -207,6 +207,35 @@ document.getElementById("btnMes").addEventListener("click",function(e){ e.stopPr
 document.getElementById("btnAnio").addEventListener("click",function(e){ e.stopPropagation(); abrirPicker("anio"); });
 document.getElementById("overlayMes").addEventListener("click",function(){ this.classList.remove("show"); });
 document.getElementById("overlayAnio").addEventListener("click",function(){ this.classList.remove("show"); });
+
+async function precargarTendencia(){
+  // Generar últimos 12 meses
+  var mesesArray=[];
+  for(var i=11;i>=0;i--){
+    var d=new Date(anioActual,mesActual-1-i,1);
+    mesesArray.push({mes:MESES[d.getMonth()],anio:d.getFullYear()});
+  }
+  try{
+    var resp=await api({action:"getResumenMultiple",meses:JSON.stringify(mesesArray)});
+    if(resp.ok && resp.data){
+      var MESES_ARR=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+      Object.entries(resp.data).forEach(function(entry){
+        var clave=entry[0]; var r=entry[1];
+        function n(k){ var v=r[k]; if(typeof v==="number") return Math.abs(v); if(!v||v==="") return 0; return Math.abs(parseFloat(String(v).replace(/[$. ]/g,"").replace(",","."))||0); }
+        function nSigned(k){ var v=r[k]; if(typeof v==="number") return v; if(!v||v==="") return 0; return parseFloat(String(v).replace(/[$. ]/g,"").replace(",","."))||0; }
+        if(!cache[clave]){
+          cache[clave]={
+            ingreso:n("Ingreso"),meta:0,saldoInicial:0,
+            ahorro:nSigned("Ahorro"),gastoTotal:n("Total Gastos"),
+            totales:{"TC Santander":n("TC Santander"),"TC CMR":n("TC CMR"),"TC Cencosud":n("TC Cencosud"),"TC Chile Nacional":n("TC Chile Nacional"),"TC Chile Internacional":n("TC Chile Internacional"),"CC Chile":nSigned("CC Chile"),"Manuales":n("Manuales"),"Arriendo":n("Arriendo")},
+            gastos:[]
+          };
+        }
+      });
+      renderChart();
+    }
+  }catch(err){ console.log("Error precargando tendencia:",err); }
+}
 
 async function cargarMes(){
   status("Cargando...");
