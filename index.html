@@ -54,6 +54,12 @@
   .vacio{text-align:center;color:#a39c8c;font-size:14px;padding:14px 0;}
   .hist-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--line);color:#7a7264;}
   .hist-row span:last-child{font-weight:600;color:var(--ink);}
+  .top3-title{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#7a7264;font-weight:700;margin:16px 0 10px;border-top:1px solid var(--line);padding-top:14px;}
+  .top3-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);}
+  .top3-row:last-child{border-bottom:none;}
+  .top3-num{font-size:13px;font-weight:800;color:#7a7264;width:16px;flex-shrink:0;}
+  .top3-nombre{flex:1;font-size:14px;}
+  .top3-monto{font-size:14px;font-weight:700;}
   .form-agregar{display:flex;flex-wrap:wrap;gap:8px;}
   .form-agregar input,.form-agregar select{border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:16px;background:#fbfaf6;color:var(--ink);}
   .form-agregar input[type=number]{flex:1;min-width:100px;}
@@ -103,6 +109,7 @@
     <h3>Tendencia por categoría</h3>
     <canvas id="chart" height="220"></canvas>
     <div id="resumenHist"></div>
+    <div id="top3Panel"></div>
   </div>
   <div class="panel">
     <h3>Agregar gasto</h3>
@@ -148,6 +155,7 @@ const PALETA = {
   "Giro Cajero":"#9a7a5a","Unicef":"#3a5a9a","Perros":"#8a7a3a",
   "Financieros":"#5b6b7a","Matrimonio":"#c9a287","Luna de miel":"#e9b297"
 };
+var TODAS_CATS = ["Almuerzo", "Arriendo", "Auto", "Bienestar", "Casa", "Comida - Casa", "Cuidadora", "Cuota Auto", "Estacionamiento", "Farmacia", "Financieros", "Fondo Reserva", "Gasto Comun", "Giro Cajero", "Luna de miel", "Matrimonio", "Movistar", "Nana", "Ocio", "Otros", "Pedir Comida", "Perros", "Regalos", "Ropa", "Seguro Auto", "Sueldo", "Taxi", "Unicef", "Viajes"];
 function color(k){ return PALETA[k]||"#8a8a8a"; }
 function fmt(n){ return (n<0?"-":"")+"$"+Math.abs(Math.round(n)).toLocaleString("es-CL"); }
 
@@ -335,7 +343,7 @@ function render(){
 
   var filtroCa=document.getElementById("filtroCat");
   filtroCa.innerHTML="<option value=''>Todas las categorías</option>";
-  cats.forEach(function(c){ var op=document.createElement("option"); op.value=c; op.textContent=c; if(filtroCatVal===c) op.selected=true; filtroCa.appendChild(op); });
+  TODAS_CATS.forEach(function(c){ var op=document.createElement("option"); op.value=c; op.textContent=c; if(filtroCatVal===c) op.selected=true; filtroCa.appendChild(op); });
 
   var breakdown=document.getElementById("breakdownCat");
   if(filtroOrigenVal){
@@ -425,6 +433,28 @@ function renderChart(){
     hh+="</div>";
     hist.innerHTML=hh;
   } else { hist.innerHTML=""; }
+
+  // Top 3 categorías del mes actual
+  var top3Panel = document.getElementById("top3Panel");
+  if(top3Panel){
+    var gastosMesActual = datosMes.gastos||[];
+    var totCatTop = {};
+    gastosMesActual.forEach(function(g){ totCatTop[g.categoria]=(totCatTop[g.categoria]||0)+g.monto; });
+    var top3 = Object.entries(totCatTop).sort(function(a,b){return b[1]-a[1];}).slice(0,3);
+    if(top3.length>0){
+      var mes = MESES[mesActual-1];
+      var th = "<div class='top3-title'>Top 3 categorías — "+mes+" "+anioActual+"</div>";
+      top3.forEach(function(entry,i){
+        th += "<div class='top3-row'>"+
+          "<div class='top3-num'>"+(i+1)+"</div>"+
+          "<div class='punto' style='background:"+color(entry[0])+"'></div>"+
+          "<div class='top3-nombre'>"+entry[0]+"</div>"+
+          "<div class='top3-monto'>"+fmt(entry[1])+"</div>"+
+          "</div>";
+      });
+      top3Panel.innerHTML=th;
+    } else { top3Panel.innerHTML=""; }
+  }
 }
 
 document.getElementById("filtroOrigen").addEventListener("change",function(){ filtroOrigenVal=this.value; filtroCatVal=""; render(); });
