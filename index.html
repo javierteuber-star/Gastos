@@ -209,17 +209,21 @@ document.getElementById("overlayMes").addEventListener("click",function(){ this.
 document.getElementById("overlayAnio").addEventListener("click",function(){ this.classList.remove("show"); });
 
 async function precargarTendencia(){
-  // Generar últimos 12 meses
   var mesesArray=[];
   for(var i=11;i>=0;i--){
     var d=new Date(anioActual,mesActual-1-i,1);
     mesesArray.push({mes:MESES[d.getMonth()],anio:d.getFullYear()});
   }
   try{
-    var resp=await api({action:"getResumenMultiple",meses:JSON.stringify(mesesArray)});
-    if(resp.ok && resp.data){
-      var MESES_ARR=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-      Object.entries(resp.data).forEach(function(entry){
+    // Cargar resumen múltiple + movimientos de cada mes en paralelo
+    var promesas=[api({action:"getResumenMultiple",meses:JSON.stringify(mesesArray)})];
+    mesesArray.forEach(function(m){
+      promesas.push(api({action:"getMovimientos",mes:m.mes,anio:m.anio}));
+    });
+    var resultados=await Promise.all(promesas);
+    var resResp=resultados[0];
+    if(resResp.ok && resResp.data){
+      Object.entries(resResp.data).forEach(function(entry){
         var clave=entry[0]; var r=entry[1];
         function n(k){ var v=r[k]; if(typeof v==="number") return Math.abs(v); if(!v||v==="") return 0; return Math.abs(parseFloat(String(v).replace(/[$. ]/g,"").replace(",","."))||0); }
         function nSigned(k){ var v=r[k]; if(typeof v==="number") return v; if(!v||v==="") return 0; return parseFloat(String(v).replace(/[$. ]/g,"").replace(",","."))||0; }
@@ -232,9 +236,24 @@ async function precargarTendencia(){
           };
         }
       });
-      renderChart();
     }
-  }catch(err){ console.log("Error precargando tendencia:",err); }
+    // Asignar movimientos a cada mes
+    mesesArray.forEach(function(m,i){
+      var movResp=resultados[i+1];
+      if(movResp&&movResp.ok&&movResp.data){
+        var d=new Date(m.anio,["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"].indexOf(m.mes),1);
+        var clave=m.anio+"-"+String(d.getMonth()+1).padStart(2,"0");
+        if(cache[clave]){
+          cache[clave].gastos=movResp.data;
+          // Agregar Arriendo sintetico
+          if(cache[clave].totales["Arriendo"]>0){
+            cache[clave].gastos.push({monto:cache[clave].totales["Arriendo"],categoria:"Arriendo",origen:"Arriendo",comentario:"",fecha:m.anio+"-"+String(d.getMonth()+1).padStart(2,"0")+"-01T00:00:00.000Z"});
+          }
+        }
+      }
+    });
+    renderChart();
+  }catch(err){ console.log("Error precargando:",err); }
 }
 
 async function cargarMes(){
@@ -250,9 +269,17 @@ async function cargarMes(){
     var r=resResp.data||{};
     function n(k){ var v=r[k]; if(typeof v === "number") return Math.abs(v); if(!v||v==="") return 0; return Math.abs(parseFloat(String(v).replace(/[$. ]/g,"").replace(",","."))||0); }
     function nSigned(k){ var v=r[k]; if(typeof v === "number") return v; if(!v||v==="") return 0; return parseFloat(String(v).replace(/[$. ]/g,"").replace(",","."))||0; }
+    var claveMes=anioActual+"-"+String(mesActual).padStart(2,"0");
+    var ingresoLocal=parseFloat(localStorage.getItem("ingreso:"+claveMes))||0;
+    var metaLocal=parseFloat(localStorage.getItem("meta:"+claveMes))||0;
+    var saldoLocal=parseFloat(localStorage.getItem("saldo:"+claveMes))||0;
+    var ingresoFinal=ingresoLocal||n("Ingreso");
+    var gastoFinal=n("Total Gastos");
+    var ahorro=nSigned("Ahorro")||0;
+    if(ingresoLocal) ahorro=ingresoLocal-gastoFinal;
     datosMes={
-      ingreso:n("Ingreso"), meta:0, saldoInicial:0,
-      ahorro:nSigned("Ahorro"), gastoTotal:n("Total Gastos"),
+      ingreso:ingresoFinal, meta:metaLocal, saldoInicial:saldoLocal,
+      ahorro:ahorro, gastoTotal:gastoFinal,
       totales:{
         "TC Santander":n("TC Santander"),"TC CMR":n("TC CMR"),"TC Cencosud":n("TC Cencosud"),
         "TC Chile Nacional":n("TC Chile Nacional"),"TC Chile Internacional":n("TC Chile Internacional"),
@@ -423,9 +450,19 @@ document.getElementById("panelResumen").addEventListener("click",function(e){
 document.getElementById("btnCancelar").addEventListener("click",function(){ document.getElementById("modalBg").classList.remove("show"); });
 document.getElementById("btnGuardar").addEventListener("click",function(){
   var val=parseFloat(document.getElementById("modalInput").value)||0;
-  if(modalTipo==="ingreso") datosMes.ingreso=val;
-  else if(modalTipo==="meta") datosMes.meta=val;
-  else if(modalTipo==="saldo") datosMes.saldoInicial=val;
+  var clave=anioActual+"-"+String(mesActual).padStart(2,"0");
+  if(modalTipo==="ingreso"){
+    datosMes.ingreso=val;
+    localStorage.setItem("ingreso:"+clave, val);
+  } else if(modalTipo==="meta"){
+    datosMes.meta=val;
+    localStorage.setItem("meta:"+clave, val);
+  } else if(modalTipo==="saldo"){
+    datosMes.saldoInicial=val;
+    localStorage.setItem("saldo:"+clave, val);
+  }
+  // Recalcular ahorro con nuevo ingreso
+  datosMes.ahorro = datosMes.ingreso - datosMes.gastoTotal;
   document.getElementById("modalBg").classList.remove("show");
   render();
 });
