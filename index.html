@@ -107,7 +107,7 @@
   </div>
   <div class="panel">
     <h3>Tendencia por categoría</h3>
-    <canvas id="chart" height="220"></canvas>
+    <canvas id="chart" height="220" style="cursor:pointer"></canvas>
     <div id="resumenHist"></div>
     <div id="top3Panel"></div>
   </div>
@@ -410,7 +410,24 @@ function renderChart(){
     type:"line",data:{labels:labels,datasets:datasets},
     options:{
       responsive:true,
-      plugins:{legend:{position:"bottom",labels:{boxWidth:9,font:{size:11},color:"#1c2b2d"}}},
+      onClick: function(e, elementos){
+        if(elementos&&elementos.length>0){
+          var idx=elementos[0].index;
+          var clave=claves[idx];
+          if(clave){
+            var p=clave.split("-");
+            anioActual=parseInt(p[0]);
+            mesActual=parseInt(p[1]);
+            filtroCatVal=""; filtroOrigenVal="";
+            actualizarBtns();
+            cargarMes();
+          }
+        }
+      },
+      plugins:{
+        legend:{position:"bottom",labels:{boxWidth:9,font:{size:11},color:"#1c2b2d"}},
+        tooltip:{callbacks:{title:function(items){ var c=claves[items[0].dataIndex]; var p=c.split("-"); return MESES[parseInt(p[1])-1]+" "+p[0]; }}}
+      },
       scales:{
         y:{ticks:{font:{size:10},color:"#7a7264",callback:function(v){return "$"+Math.round(v/1000)+"k";}},grid:{color:"#ece8dc"}},
         x:{ticks:{font:{size:10},color:"#7a7264"},grid:{display:false}}
