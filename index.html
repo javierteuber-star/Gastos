@@ -5,79 +5,85 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Control Gastos</title>
 <style>
-  :root{--ink:#1c2b2d;--paper:#f6f3ec;--line:#d8d2c2;--accent:#c9622a;--good:#3f6b4f;--bad:#b3402f;}
+  :root{--bg:#0e1420;--card:#171f2e;--card2:#1d2738;--ink:#e8edf5;--muted:#8b97ab;--line:#26324a;--accent:#4fc3f7;--cuota:#ffb74d;--good:#66bb6a;--bad:#ef5350;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--paper);color:var(--ink);font-family:-apple-system,Helvetica,Arial,sans-serif;padding-bottom:60px;}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,Helvetica,Arial,sans-serif;padding-bottom:60px;}
   header{padding:24px 20px 16px;border-bottom:1px solid var(--line);}
-  h1{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#7a7264;font-weight:600;margin-bottom:12px;}
+  h1{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:12px;}
   .mes-selector{display:flex;gap:8px;align-items:center;}
   .mes-btn{font-size:22px;font-weight:800;color:var(--ink);background:none;border:none;padding:0;cursor:pointer;}
-  .mes-btn .chevron{font-size:14px;color:#7a7264;margin-left:3px;}
+  .mes-btn .chevron{font-size:14px;color:var(--muted);margin-left:3px;}
   .mes-sep{font-size:22px;font-weight:300;color:var(--line);}
   .picker-overlay{position:fixed;inset:0;z-index:100;display:none;}
   .picker-overlay.show{display:block;}
-  .picker-box{position:absolute;background:white;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.15);padding:8px 0;min-width:160px;border:1px solid var(--line);max-height:300px;overflow-y:auto;}
+  .picker-box{position:absolute;background:var(--card2);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.5);padding:8px 0;min-width:160px;border:1px solid var(--line);max-height:300px;overflow-y:auto;}
   .picker-item{padding:11px 18px;font-size:15px;font-weight:500;cursor:pointer;color:var(--ink);}
-  .picker-item:hover{background:var(--paper);}
+  .picker-item:hover{background:var(--card);}
   .picker-item.activo{font-weight:800;color:var(--accent);}
   main{max-width:480px;margin:0 auto;padding:0 20px;}
-  .panel{margin-top:22px;padding:22px;background:white;border:1px solid var(--line);border-radius:14px;}
-  .panel h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#7a7264;margin:0 0 14px;font-weight:700;}
+  .panel{margin-top:22px;padding:22px;background:var(--card);border:1px solid var(--line);border-radius:14px;}
+  .panel h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 14px;font-weight:700;}
   .dato-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);}
   .dato-row:last-child{border-bottom:none;}
-  .dato-row .label{font-size:14px;color:#7a7264;}
+  .dato-row .label{font-size:14px;color:var(--muted);}
   .dato-row .valor{font-size:17px;font-weight:700;}
   .dato-row button.edit{border:none;background:none;color:var(--accent);font-size:13px;font-weight:600;}
   .resultado{text-align:center;padding:6px 0 2px;}
   .resultado .monto{font-size:36px;font-weight:800;line-height:1.1;}
-  .resultado .lbl{font-size:12px;color:#7a7264;letter-spacing:.05em;text-transform:uppercase;margin-top:2px;}
-  .resultado .sub{font-size:13px;color:#7a7264;margin-top:10px;}
-  .barra-bg{height:10px;border-radius:6px;background:#ece8dc;overflow:hidden;margin-top:14px;}
+  .resultado .lbl{font-size:12px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-top:2px;}
+  .resultado .sub{font-size:13px;color:var(--muted);margin-top:10px;}
+  .barra-bg{height:10px;border-radius:6px;background:var(--card2);overflow:hidden;margin-top:14px;}
   .barra-fill{height:100%;border-radius:6px;}
   .filtros{display:flex;gap:8px;}
-  .filtros select{flex:1;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:14px;background:#fbfaf6;color:var(--ink);}
-  .cat-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer;}
-  .cat-row:last-child{border-bottom:none;}
-  .cat-row.activo{background:#f6f3ec;border-radius:8px;padding:9px 8px;}
+  .filtros select{flex:1;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:14px;background:var(--card2);color:var(--ink);}
+  /* Tabla de categorías 4 columnas */
+  .cat-table{margin-top:16px;border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:12px;}
+  .cat-trow{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;padding:9px 10px;border-bottom:1px solid var(--line);align-items:center;cursor:pointer;}
+  .cat-trow:last-child{border-bottom:none;}
+  .cat-trow.header{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.4px;cursor:default;background:var(--card2);font-weight:700;}
+  .cat-trow .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .cat-trow .tot{font-weight:700;}
+  .cat-trow .cnom{display:flex;align-items:center;gap:6px;min-width:0;}
+  .cat-trow .cnom span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cat-trow.selected{background:rgba(79,195,247,.12);box-shadow:inset 3px 0 0 var(--accent);}
+  .cat-trow.selected .cnom span{font-weight:700;}
+  .cat-trow.subtotal{background:var(--card2);font-weight:700;border-top:2px solid var(--line);cursor:default;}
+  .cat-cuota-col{color:var(--cuota);}
+  .nota-cuotas{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.4;}
   .punto{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
-  .cat-row .nombre{flex:1;font-size:14px;}
-  .cat-row.activo .nombre{font-weight:700;}
-  .barrita{height:5px;border-radius:3px;background:#ece8dc;flex-basis:70px;flex-shrink:0;overflow:hidden;}
-  .barrita div{height:100%;border-radius:3px;}
-  .monto-cat{font-size:14px;font-weight:700;white-space:nowrap;}
   .lista{list-style:none;padding:0;margin-top:4px;}
-  .lista li{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--line);font-size:15px;}
+  .lista li{display:flex;justify-content:space-between;align-items:center;padding:13px 0 13px 8px;border-bottom:1px solid var(--line);font-size:15px;}
   .lista li:last-child{border-bottom:none;}
-  .desc{flex:1;padding-right:10px;}
-  .cat-tag{font-size:11px;color:#7a7264;display:block;margin-top:2px;font-style:italic;}
+  .lista li.es-cuota{box-shadow:inset 3px 0 0 var(--cuota);}
+  .lista li.es-cuota .monto{color:var(--cuota);}
+  .desc{flex:1;padding-right:10px;min-width:0;}
+  .cat-tag{font-size:11px;color:var(--muted);display:block;margin-top:2px;font-style:italic;}
+  .badge-cuota{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:1px;background:rgba(255,183,77,.15);color:var(--cuota);border:1px solid rgba(255,183,77,.4);font-style:normal;}
   .monto{font-weight:700;white-space:nowrap;}
-  .vacio{text-align:center;color:#a39c8c;font-size:14px;padding:14px 0;}
-  .hist-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--line);color:#7a7264;}
+  .det-sub{display:flex;justify-content:space-between;padding:12px 10px;background:var(--card2);font-size:13px;font-weight:700;border-top:2px solid var(--line);border-radius:0 0 10px 10px;margin-top:2px;}
+  .vacio{text-align:center;color:var(--muted);font-size:14px;padding:14px 0;}
+  .hist-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--line);color:var(--muted);}
   .hist-row span:last-child{font-weight:600;color:var(--ink);}
-  .top3-title{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#7a7264;font-weight:700;margin:16px 0 10px;border-top:1px solid var(--line);padding-top:14px;}
-  .top3-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);}
-  .top3-row:last-child{border-bottom:none;}
-  .top3-num{font-size:13px;font-weight:800;color:#7a7264;width:16px;flex-shrink:0;}
-  .top3-nombre{flex:1;font-size:14px;}
-  .top3-monto{font-size:14px;font-weight:700;}
   .form-agregar{display:flex;flex-wrap:wrap;gap:8px;}
-  .form-agregar input,.form-agregar select{border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:16px;background:#fbfaf6;color:var(--ink);}
+  .form-agregar input,.form-agregar select{border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:16px;background:var(--card2);color:var(--ink);}
+  .form-agregar input::placeholder{color:var(--muted);}
   .form-agregar input[type=number]{flex:1;min-width:100px;}
   .form-agregar select{flex:1.2;min-width:130px;}
   .form-agregar input[type=text]{flex:1.2;min-width:130px;}
-  .form-agregar button.submit{width:100%;border:none;background:var(--accent);color:white;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;}
-  .btn-foto{width:100%;border:2px dashed var(--line);background:none;border-radius:10px;padding:11px;font-size:14px;color:#7a7264;margin-bottom:12px;font-weight:600;cursor:pointer;}
-  #fotoStatus{font-size:13px;color:#7a7264;text-align:center;min-height:18px;margin-bottom:8px;}
-  .modal-bg{position:fixed;inset:0;background:rgba(28,43,45,.4);display:none;align-items:center;justify-content:center;padding:20px;z-index:200;}
+  .form-agregar input[type=date]{color-scheme:dark;}
+  .form-agregar button.submit{width:100%;border:none;background:var(--accent);color:#0e1420;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;}
+  .btn-foto{width:100%;border:2px dashed var(--line);background:none;border-radius:10px;padding:11px;font-size:14px;color:var(--muted);margin-bottom:12px;font-weight:600;cursor:pointer;}
+  #fotoStatus{font-size:13px;color:var(--muted);text-align:center;min-height:18px;margin-bottom:8px;}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:200;}
   .modal-bg.show{display:flex;}
-  .modal{background:white;border-radius:14px;padding:22px;width:100%;max-width:340px;}
+  .modal{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:22px;width:100%;max-width:340px;}
   .modal h2{font-size:16px;margin:0 0 14px;}
-  .modal input{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:16px;margin-bottom:14px;background:#fbfaf6;}
+  .modal input{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:16px;margin-bottom:14px;background:var(--card);color:var(--ink);}
   .modal .botones{display:flex;gap:8px;}
   .modal .botones button{flex:1;border:none;border-radius:10px;padding:12px;font-size:15px;font-weight:600;cursor:pointer;}
-  .modal .cancelar{background:#ece8dc;color:var(--ink);}
-  .modal .guardar{background:var(--accent);color:white;}
-  .status-bar{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--line);padding:10px 20px;font-size:13px;color:#7a7264;text-align:center;display:none;}
+  .modal .cancelar{background:var(--card);color:var(--ink);border:1px solid var(--line);}
+  .modal .guardar{background:var(--accent);color:#0e1420;}
+  .status-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card2);border-top:1px solid var(--line);padding:10px 20px;font-size:13px;color:var(--muted);text-align:center;display:none;}
   .status-bar.show{display:block;}
   .status-bar.error{color:var(--bad);}
   .status-bar.ok{color:var(--good);}
@@ -98,7 +104,7 @@
   <div class="panel" id="panelResumen"><div class="vacio">Conectando...</div></div>
   <div class="panel" id="panelFue"></div>
   <div class="panel">
-    <h3>Filtrar</h3>
+    <h3>Gastos por categoría</h3>
     <div class="filtros">
       <select id="filtroOrigen"><option value="">Todos los orígenes</option></select>
       <select id="filtroCat"><option value="">Todas las categorías</option></select>
@@ -109,7 +115,6 @@
     <h3>Tendencia por categoría</h3>
     <canvas id="chart" height="220" style="cursor:pointer"></canvas>
     <div id="resumenHist"></div>
-    <div id="top3Panel"></div>
   </div>
   <div class="panel">
     <h3>Agregar gasto</h3>
@@ -144,26 +149,27 @@
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyK-K2SkRG3soQeC3vxxwgg6GQj7H9kJJXBLdusCWeDLbfzBv1wvPxek9NitaZeYrD4EQ/exec";
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const PALETA = {
-  "TC Santander":"#c9622a","TC CMR":"#3f6b4f","TC Cencosud":"#5b7a99",
-  "TC Chile Nacional":"#a35b8c","TC Chile Internacional":"#c9a227","Manuales":"#7a5fb0",
-  "Arriendo":"#8b4513","Comida - Casa":"#3f6b4f","Auto":"#5b7a99","Nana":"#a35b8c",
-  "Pedir Comida":"#c9a227","Almuerzo":"#7a5fb0","Ocio":"#4c8c7c","Farmacia":"#b3543f",
-  "Gasto Comun":"#6b7fb5","Regalos":"#9c7a4a","Taxi":"#5fa3a3","Viajes":"#3a8a6a",
-  "Bienestar":"#a05898","Movistar":"#5588aa","Otros":"#8a8a8a","Casa":"#c97a3a",
-  "Ropa":"#7a5fb0","Cuota Auto":"#4a7a99","Seguro Auto":"#3a6a89",
-  "Estacionamiento":"#6a8a99","Cuidadora":"#b35ba0","Fondo Reserva":"#2a7a5a",
-  "Giro Cajero":"#9a7a5a","Unicef":"#3a5a9a","Perros":"#8a7a3a",
-  "Financieros":"#5b6b7a","Matrimonio":"#c9a287","Luna de miel":"#e9b297"
+  "TC Santander":"#e08a4f","TC CMR":"#6fae85","TC Cencosud":"#7d9cc0",
+  "TC Chile Nacional":"#c07bb0","TC Chile Internacional":"#d9bb50","Manuales":"#9a82d0",
+  "Arriendo":"#b07050","Comida - Casa":"#6fae85","Auto":"#7d9cc0","Nana":"#c07bb0",
+  "Pedir Comida":"#d9bb50","Almuerzo":"#9a82d0","Ocio":"#6cb0a0","Farmacia":"#d3735e",
+  "Gasto Comun":"#8ba0d5","Regalos":"#bc9a6a","Taxi":"#7fc3c3","Viajes":"#5aaa8a",
+  "Bienestar":"#c078b8","Movistar":"#75a8ca","Otros":"#9a9a9a","Casa":"#e09a5a",
+  "Ropa":"#9a82d0","Cuota Auto":"#6a9ab9","Seguro Auto":"#5a8aa9",
+  "Estacionamiento":"#8aaab9","Cuidadora":"#d37bc0","Fondo Reserva":"#4a9a7a",
+  "Giro Cajero":"#ba9a7a","Unicef":"#5a7aba","Perros":"#aa9a5a",
+  "Financieros":"#7b8b9a","Matrimonio":"#e9c2a7","Luna de miel":"#f9d2b7"
 };
 var TODAS_CATS = ["Almuerzo", "Arriendo", "Auto", "Bienestar", "Casa", "Comida - Casa", "Cuidadora", "Cuota Auto", "Estacionamiento", "Farmacia", "Financieros", "Fondo Reserva", "Gasto Comun", "Giro Cajero", "Luna de miel", "Matrimonio", "Movistar", "Nana", "Ocio", "Otros", "Pedir Comida", "Perros", "Regalos", "Ropa", "Seguro Auto", "Sueldo", "Taxi", "Unicef", "Viajes"];
-function color(k){ return PALETA[k]||"#8a8a8a"; }
+function color(k){ return PALETA[k]||"#9a9a9a"; }
 function fmt(n){ return (n<0?"-":"")+"$"+Math.abs(Math.round(n)).toLocaleString("es-CL"); }
 
 var mesActual=7, anioActual=2026;
-var datosMes={ingreso:0,meta:0,saldoInicial:0,ahorro:0,gastoTotal:0,totales:{},gastos:[]};
+var datosMes={ingreso:0,meta:0,saldoInicial:0,ahorro:0,gastoTotal:0,totales:{},gastos:[],cuotas:[]};
 var cache={};
 var filtroCatVal="", filtroOrigenVal="";
 var chart=null, modalTipo=null;
+var cuotasOk=false;
 
 function status(msg,tipo){
   var bar=document.getElementById("statusBar");
@@ -274,6 +280,12 @@ async function cargarMes(){
     var movResp=await api({action:"getMovimientos",mes:mes,anio:anioActual});
     if(!resResp.ok) throw new Error(resResp.error||"Error en Resumen");
     if(!movResp.ok) throw new Error(movResp.error||"Error en Movimientos");
+    // Cuotas de meses anteriores que caen en este mes (requiere Apps Script actualizado)
+    var cuotasData=[]; cuotasOk=false;
+    try{
+      var cuoResp=await api({action:"getCuotas",mes:mes,anio:anioActual});
+      if(cuoResp&&cuoResp.ok&&Array.isArray(cuoResp.data)){ cuotasData=cuoResp.data; cuotasOk=true; }
+    }catch(e){ console.log("getCuotas no disponible aún:",e); }
     var r=resResp.data||{};
     function n(k){ var v=r[k]; if(typeof v === "number") return Math.abs(v); if(!v||v==="") return 0; return Math.abs(parseFloat(String(v).replace(/[$. ]/g,"").replace(",","."))||0); }
     function nSigned(k){ var v=r[k]; if(typeof v === "number") return v; if(!v||v==="") return 0; return parseFloat(String(v).replace(/[$. ]/g,"").replace(",","."))||0; }
@@ -293,7 +305,19 @@ async function cargarMes(){
         "TC Chile Nacional":n("TC Chile Nacional"),"TC Chile Internacional":n("TC Chile Internacional"),
         "CC Chile":nSigned("CC Chile"),"Manuales":n("Manuales"),"Arriendo":n("Arriendo")
       },
-      gastos:movResp.data||[]
+      gastos:movResp.data||[],
+      cuotas:cuotasData.map(function(c){
+        return {
+          monto:Math.abs(c.monto||0),
+          montoTotal:Math.abs(c.montoTotal||0),
+          cuotas:c.cuotas||0,
+          cuotaNum:c.cuotaNum||0,
+          categoria:c.categoria||"Otros",
+          origen:c.origen||"",
+          comentario:c.comentario||"",
+          fechaCompra:c.fechaCompra||""
+        };
+      })
     };
     // Agregar Arriendo sintético
     if(datosMes.totales["Arriendo"]>0){
@@ -308,6 +332,12 @@ async function cargarMes(){
     status("❌ Error: "+err.message,"error");
     document.getElementById("panelResumen").innerHTML='<div class="vacio">Error cargando datos. Revisa tu conexión.</div>';
   }
+}
+
+function fechaCorta(iso){
+  var f=new Date(iso);
+  if(isNaN(f)) return "";
+  return f.getDate()+" "+MESES[f.getMonth()].slice(0,3)+" "+f.getFullYear().toString().slice(2);
 }
 
 function render(){
@@ -333,9 +363,9 @@ function render(){
     '<div class="lbl">ahorro real este mes</div><div class="sub">'+sub+'</div></div>'+
     '<div class="barra-bg"><div class="barra-fill" style="width:'+pct+'%;background:'+barColor+'"></div></div>';
 
-  var origenes=[...new Set(d.gastos.map(function(g){return g.origen;}).filter(Boolean))].sort();
+  var origenes=[...new Set(d.gastos.concat(d.cuotas||[]).map(function(g){return g.origen;}).filter(Boolean))].sort();
   var gastosFiltOrigen=filtroOrigenVal?d.gastos.filter(function(g){return g.origen===filtroOrigenVal;}):d.gastos;
-  var cats=[...new Set(gastosFiltOrigen.map(function(g){return g.categoria;}))].sort();
+  var cuotasFiltOrigen=filtroOrigenVal?(d.cuotas||[]).filter(function(c){return c.origen===filtroOrigenVal;}):(d.cuotas||[]);
 
   var filtroOr=document.getElementById("filtroOrigen");
   filtroOr.innerHTML="<option value=''>Todos los orígenes</option>";
@@ -345,42 +375,67 @@ function render(){
   filtroCa.innerHTML="<option value=''>Todas las categorías</option>";
   TODAS_CATS.forEach(function(c){ var op=document.createElement("option"); op.value=c; op.textContent=c; if(filtroCatVal===c) op.selected=true; filtroCa.appendChild(op); });
 
-  var breakdown=document.getElementById("breakdownCat");
-  if(filtroOrigenVal){
-    var totCat={};
-    gastosFiltOrigen.forEach(function(g){ totCat[g.categoria]=(totCat[g.categoria]||0)+g.monto; });
-    var entCat=Object.entries(totCat).sort(function(a,b){return b[1]-a[1];});
-    var maxC=Math.max.apply(null,entCat.map(function(e){return e[1];})||[1]);
-    var totalO=entCat.reduce(function(a,e){return a+e[1];},0);
-    var bh="<div style='margin-top:14px;border-top:1px solid var(--line);padding-top:12px;'>";
-    bh+="<div style='display:flex;justify-content:space-between;font-size:11px;color:#7a7264;font-weight:700;text-transform:uppercase;margin-bottom:8px;'><span>Por categoría</span><span>"+fmt(totalO)+"</span></div>";
-    entCat.forEach(function(entry){
-      var cat=entry[0]; var monto=entry[1]; var activo=filtroCatVal===cat;
-      bh+="<div class='cat-row"+(activo?" activo":"")+"' data-cat='"+cat+"'>"+
-        "<div class='punto' style='background:"+color(cat)+"'></div>"+
-        "<div class='nombre'>"+cat+"</div>"+
-        "<div class='barrita'><div style='width:"+Math.round((monto/maxC)*100)+"%;background:"+color(cat)+"'></div></div>"+
-        "<div class='monto-cat'>"+fmt(monto)+"</div></div>";
-    });
-    bh+="</div>";
-    breakdown.innerHTML=bh;
-  } else { breakdown.innerHTML=""; }
-
-  var gastosMov=d.gastos.filter(function(g){
-    return (!filtroOrigenVal||g.origen===filtroOrigenVal)&&(!filtroCatVal||g.categoria===filtroCatVal);
+  // Tabla de categorías: Del mes | Cuotas anteriores | Total, ordenada por total desc
+  var porCat={};
+  gastosFiltOrigen.forEach(function(g){
+    if(!porCat[g.categoria]) porCat[g.categoria]={mes:0,cuotas:0};
+    porCat[g.categoria].mes+=g.monto;
   });
-  var mh="<h3>Movimientos ("+gastosMov.length+" de "+d.gastos.length+")</h3>";
-  if(gastosMov.length===0){ mh+='<div class="vacio">Sin movimientos.</div>'; }
+  cuotasFiltOrigen.forEach(function(c){
+    if(!porCat[c.categoria]) porCat[c.categoria]={mes:0,cuotas:0};
+    porCat[c.categoria].cuotas+=c.monto;
+  });
+  var entCat=Object.entries(porCat).map(function(e){
+    return {cat:e[0],mes:e[1].mes,cuotas:e[1].cuotas,total:e[1].mes+e[1].cuotas};
+  }).sort(function(a,b){return b.total-a.total;});
+  var breakdown=document.getElementById("breakdownCat");
+  if(entCat.length===0){
+    breakdown.innerHTML='<div class="vacio">Sin gastos este mes.</div>';
+  } else {
+    var totMes=0,totCuo=0;
+    var bh='<div class="cat-table">';
+    bh+='<div class="cat-trow header"><div>Categoría</div><div class="num">Del mes</div><div class="num">Cuotas ant.</div><div class="num">Total</div></div>';
+    entCat.forEach(function(e){
+      totMes+=e.mes; totCuo+=e.cuotas;
+      var activo=filtroCatVal===e.cat;
+      bh+='<div class="cat-trow'+(activo?" selected":"")+'" data-cat="'+e.cat+'">'+
+        '<div class="cnom"><div class="punto" style="background:'+color(e.cat)+'"></div><span>'+e.cat+'</span></div>'+
+        '<div class="num">'+fmt(e.mes)+'</div>'+
+        '<div class="num'+(e.cuotas>0?" cat-cuota-col":"")+'">'+fmt(e.cuotas)+'</div>'+
+        '<div class="num tot">'+fmt(e.total)+'</div></div>';
+    });
+    bh+='<div class="cat-trow subtotal"><div>Total</div><div class="num">'+fmt(totMes)+'</div><div class="num'+(totCuo>0?" cat-cuota-col":"")+'">'+fmt(totCuo)+'</div><div class="num tot">'+fmt(totMes+totCuo)+'</div></div>';
+    bh+='</div>';
+    if(!cuotasOk) bh+='<div class="nota-cuotas">⚠️ Cuotas de meses anteriores no disponibles: falta actualizar el Apps Script (acción getCuotas).</div>';
+    breakdown.innerHTML=bh;
+  }
+
+  // Detalle de movimientos: gastos del mes + cuotas vigentes
+  var gastosMov=gastosFiltOrigen.filter(function(g){ return !filtroCatVal||g.categoria===filtroCatVal; });
+  var cuotasMov=cuotasFiltOrigen.filter(function(c){ return !filtroCatVal||c.categoria===filtroCatVal; });
+  var totalItems=d.gastos.length+(d.cuotas||[]).length;
+  var mh="<h3>Movimientos ("+(gastosMov.length+cuotasMov.length)+" de "+totalItems+")</h3>";
+  if(gastosMov.length===0&&cuotasMov.length===0){ mh+='<div class="vacio">Sin movimientos.</div>'; }
   else{
     mh+="<ul class='lista'>";
     gastosMov.slice(0,60).forEach(function(g){
-      var fecha=new Date(g.fecha);
-      var fs=isNaN(fecha)?"": (fecha.getDate()+" "+MESES[fecha.getMonth()].slice(0,3)+" "+fecha.getFullYear().toString().slice(2));
+      var fs=fechaCorta(g.fecha);
       var coment=g.comentario?(" · "+g.comentario.slice(0,40)):"";
-      mh+="<li><div class='desc'>"+g.categoria+"<span class='cat-tag'>"+fs+" · "+g.origen+coment+"</span></div><div class='monto'>"+fmt(g.monto)+"</div></li>";
+      var badge=(g.cuotas&&g.cuotas>1)?'<span class="badge-cuota">cuota 1 de '+g.cuotas+'</span>':"";
+      mh+="<li><div class='desc'>"+g.categoria+badge+"<span class='cat-tag'>"+fs+" · "+g.origen+coment+"</span></div><div class='monto'>"+fmt(g.monto)+"</div></li>";
     });
-    if(gastosMov.length>60) mh+="<li style='color:#7a7264;font-size:13px;justify-content:center;'>... y "+(gastosMov.length-60)+" más</li>";
+    if(gastosMov.length>60) mh+="<li style='color:var(--muted);font-size:13px;justify-content:center;'>... y "+(gastosMov.length-60)+" más</li>";
+    cuotasMov.forEach(function(c){
+      var fs=fechaCorta(c.fechaCompra);
+      var coment=c.comentario?c.comentario.slice(0,40):c.categoria;
+      var metaTxt="Compra: "+fs+(c.montoTotal?" · Total "+fmt(c.montoTotal):"")+(c.origen?" · "+c.origen:"");
+      mh+="<li class='es-cuota'><div class='desc'>"+coment+'<span class="badge-cuota">cuota '+c.cuotaNum+" de "+c.cuotas+"</span><span class='cat-tag'>"+metaTxt+"</span></div><div class='monto'>"+fmt(c.monto)+"</div></li>";
+    });
     mh+="</ul>";
+    if(filtroCatVal){
+      var subDet=gastosMov.reduce(function(a,g){return a+g.monto;},0)+cuotasMov.reduce(function(a,c){return a+c.monto;},0);
+      mh+='<div class="det-sub"><div>Subtotal '+filtroCatVal+'</div><div>'+fmt(subDet)+'</div></div>';
+    }
   }
   document.getElementById("panelMov").innerHTML=mh;
   renderChart();
@@ -392,7 +447,7 @@ function renderChart(){
   var datasets=[{
     label:"Total Gastos",
     data:claves.map(function(c){ return (cache[c]||{}).gastoTotal||0; }),
-    borderColor:"#1c2b2d",backgroundColor:"#1c2b2d",tension:0.3,pointRadius:3,borderWidth:2,fill:false
+    borderColor:"#e8edf5",backgroundColor:"#e8edf5",tension:0.3,pointRadius:3,borderWidth:2,fill:false
   }];
   if(filtroCatVal){
     datasets.push({
@@ -425,12 +480,12 @@ function renderChart(){
         }
       },
       plugins:{
-        legend:{position:"bottom",labels:{boxWidth:9,font:{size:11},color:"#1c2b2d"}},
+        legend:{position:"bottom",labels:{boxWidth:9,font:{size:11},color:"#e8edf5"}},
         tooltip:{callbacks:{title:function(items){ var c=claves[items[0].dataIndex]; var p=c.split("-"); return MESES[parseInt(p[1])-1]+" "+p[0]; }}}
       },
       scales:{
-        y:{ticks:{font:{size:10},color:"#7a7264",callback:function(v){return "$"+Math.round(v/1000)+"k";}},grid:{color:"#ece8dc"}},
-        x:{ticks:{font:{size:10},color:"#7a7264"},grid:{display:false}}
+        y:{ticks:{font:{size:10},color:"#8b97ab",callback:function(v){return "$"+Math.round(v/1000)+"k";}},grid:{color:"#26324a"}},
+        x:{ticks:{font:{size:10},color:"#8b97ab"},grid:{display:false}}
       }
     }
   });
@@ -450,28 +505,6 @@ function renderChart(){
     hh+="</div>";
     hist.innerHTML=hh;
   } else { hist.innerHTML=""; }
-
-  // Top 3 categorías del mes actual
-  var top3Panel = document.getElementById("top3Panel");
-  if(top3Panel){
-    var gastosMesActual = datosMes.gastos||[];
-    var totCatTop = {};
-    gastosMesActual.forEach(function(g){ totCatTop[g.categoria]=(totCatTop[g.categoria]||0)+g.monto; });
-    var top3 = Object.entries(totCatTop).sort(function(a,b){return b[1]-a[1];}).slice(0,3);
-    if(top3.length>0){
-      var mes = MESES[mesActual-1];
-      var th = "<div class='top3-title'>Top 3 categorías — "+mes+" "+anioActual+"</div>";
-      top3.forEach(function(entry,i){
-        th += "<div class='top3-row'>"+
-          "<div class='top3-num'>"+(i+1)+"</div>"+
-          "<div class='punto' style='background:"+color(entry[0])+"'></div>"+
-          "<div class='top3-nombre'>"+entry[0]+"</div>"+
-          "<div class='top3-monto'>"+fmt(entry[1])+"</div>"+
-          "</div>";
-      });
-      top3Panel.innerHTML=th;
-    } else { top3Panel.innerHTML=""; }
-  }
 }
 
 document.getElementById("filtroOrigen").addEventListener("change",function(){ filtroOrigenVal=this.value; filtroCatVal=""; render(); });
@@ -527,21 +560,21 @@ document.getElementById("btnAgregar").addEventListener("click",async function(){
     var partesFecha=fechaVal.split("-");
     var fecha=partesFecha[2]+"/"+partesFecha[1]+"/"+partesFecha[0];
     var hoy=new Date(fechaVal+"T12:00:00");
-    var montoCuota=Math.round(-monto/cuotas);
-    var mesInicio=MESES[mesActual-1];
-    var mesFinalIdx=(mesActual-1+cuotas-1)%12;
-    var anioFinal=anioActual+Math.floor((mesActual-1+cuotas-1)/12);
-    var mesFinal=MESES[mesFinalIdx];
     var sheetName={"TC Santander":"TC Santander","TC CMR":"TC CMR","TC Cencosud":"TC Cencosud"}[origen]||"Manuales";
-    var row;
-    if(sheetName==="Manuales"){
-      row=[fecha,comentario||cat,origen,monto,cuotas,montoCuota,anioActual,mesInicio,mesFinal,cat];
-    } else {
-      row=[fecha,comentario||cat,"Titular",monto,cuotas,montoCuota,anioActual,mesInicio,mesFinal,cat];
-    }
-    var res=await apiPost({action:"appendRow",sheet:sheetName,row:row});
+    var res=await apiPost({
+      action:"appendGasto",
+      sheet:sheetName,
+      fecha:fecha,
+      descripcion:comentario||cat,
+      titular:sheetName==="Manuales"?origen:"Titular",
+      total:monto,
+      cuotas:cuotas,
+      concepto:cat,
+      mesInicioIdx:mesActual-1,
+      anioInicio:anioActual
+    });
     if(!res.ok) throw new Error(res.error||"Error guardando");
-    datosMes.gastos.unshift({monto:Math.abs(montoCuota),categoria:cat,origen:origen,comentario:comentario,fecha:hoy.toISOString()});
+    datosMes.gastos.unshift({monto:Math.round(monto/cuotas),montoTotal:monto,categoria:cat,origen:origen,comentario:comentario,fecha:hoy.toISOString(),cuotas:cuotas});
     document.getElementById("montoInput").value="";
     document.getElementById("comentarioInput").value="";
     document.getElementById("cuotasInput").value="1";
