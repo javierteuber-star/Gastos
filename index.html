@@ -503,10 +503,13 @@ function renderChart(){
       },
       plugins:{
         legend:{position:"bottom",labels:{boxWidth:9,font:{size:11},color:"#e8edf5"}},
-        tooltip:{callbacks:{title:function(items){ var c=claves[items[0].dataIndex]; var p=c.split("-"); return MESES[parseInt(p[1])-1]+" "+p[0]; }}}
+        tooltip:{callbacks:{
+          title:function(items){ var c=claves[items[0].dataIndex]; var p=c.split("-"); return MESES[parseInt(p[1])-1]+" "+p[0]; },
+          label:function(ctx){ return ctx.dataset.label+": "+fmt(ctx.parsed.y); }
+        }}
       },
       scales:{
-        y:{ticks:{font:{size:10},color:"#8b97ab",callback:function(v){return "$"+Math.round(v/1000)+"k";}},grid:{color:"#26324a"}},
+        y:{ticks:{font:{size:10},color:"#8b97ab",callback:function(v){return "$"+Math.round(v/1000).toLocaleString("es-CL")+"M";}},grid:{color:"#26324a"}},
         x:{ticks:{font:{size:10},color:"#8b97ab"},grid:{display:false}}
       }
     }
