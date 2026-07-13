@@ -87,6 +87,15 @@
   .status-bar.show{display:block;}
   .status-bar.error{color:var(--bad);}
   .status-bar.ok{color:var(--good);}
+  .inicio-overlay{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .inicio-box{width:100%;max-width:340px;text-align:center;}
+  .inicio-box h2{font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:22px;}
+  .anio-nav{display:flex;align-items:center;justify-content:center;gap:26px;margin-bottom:20px;}
+  .anio-nav button{background:none;border:none;color:var(--accent);font-size:26px;font-weight:700;cursor:pointer;padding:4px 10px;}
+  .anio-nav .anio-num{font-size:26px;font-weight:800;min-width:90px;}
+  .meses-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .meses-grid button{background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--ink);padding:15px 0;font-size:14px;font-weight:600;cursor:pointer;}
+  .meses-grid button.actual{background:rgba(79,195,247,.15);border-color:var(--accent);color:var(--accent);}
 </style>
 </head>
 <body>
@@ -143,6 +152,17 @@
     </div>
   </div>
 </div>
+<div class="inicio-overlay" id="inicioOverlay">
+  <div class="inicio-box">
+    <h2>¿Qué mes quieres ver?</h2>
+    <div class="anio-nav">
+      <button id="inicioAnioPrev">‹</button>
+      <span class="anio-num" id="inicioAnioNum"></span>
+      <button id="inicioAnioNext">›</button>
+    </div>
+    <div class="meses-grid" id="inicioMeses"></div>
+  </div>
+</div>
 <div class="status-bar" id="statusBar"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
@@ -164,7 +184,8 @@ var TODAS_CATS = ["Almuerzo", "Arriendo", "Auto", "Bienestar", "Casa", "Comida -
 function color(k){ return PALETA[k]||"#9a9a9a"; }
 function fmt(n){ return (n<0?"-":"")+"$"+Math.abs(Math.round(n)).toLocaleString("es-CL"); }
 
-var mesActual=7, anioActual=2026;
+var _hoy=new Date();
+var mesActual=_hoy.getMonth()+1, anioActual=_hoy.getFullYear();
 var datosMes={ingreso:0,meta:0,saldoInicial:0,ahorro:0,gastoTotal:0,totales:{},gastos:[],cuotas:[]};
 var cache={};
 var filtroCatVal="", filtroOrigenVal="";
@@ -626,8 +647,28 @@ var dd = String(hoyFecha.getDate()).padStart(2,"0");
 document.getElementById("fechaInput").value = yyyy+"-"+mm+"-"+dd;
 
 actualizarBtns();
-// Precargar últimos 12 meses para tendencia, luego cargar mes actual
-precargarTendencia().then(function(){ cargarMes(); });
+// Selector inicial: preguntar qué mes/año ver antes de cargar
+var inicioAnio=anioActual;
+function renderInicio(){
+  document.getElementById("inicioAnioNum").textContent=inicioAnio;
+  var grid=document.getElementById("inicioMeses");
+  grid.innerHTML="";
+  MESES.forEach(function(m,i){
+    var b=document.createElement("button");
+    b.textContent=m.slice(0,3);
+    if(inicioAnio===_hoy.getFullYear()&&i===_hoy.getMonth()) b.className="actual";
+    b.onclick=function(){
+      mesActual=i+1; anioActual=inicioAnio;
+      actualizarBtns();
+      document.getElementById("inicioOverlay").style.display="none";
+      precargarTendencia().then(function(){ cargarMes(); });
+    };
+    grid.appendChild(b);
+  });
+}
+document.getElementById("inicioAnioPrev").addEventListener("click",function(){ inicioAnio--; renderInicio(); });
+document.getElementById("inicioAnioNext").addEventListener("click",function(){ inicioAnio++; renderInicio(); });
+renderInicio();
 </script>
 </body>
 </html>
