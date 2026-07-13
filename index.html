@@ -229,11 +229,11 @@ async function precargarTendencia(){
     mesesArray.push({mes:MESES[d.getMonth()],anio:d.getFullYear()});
   }
   try{
-    // Cargar resumen múltiple + movimientos de cada mes en paralelo
-    var promesas=[api({action:"getResumenMultiple",meses:JSON.stringify(mesesArray)})];
-    mesesArray.forEach(function(m){
-      promesas.push(api({action:"getMovimientos",mes:m.mes,anio:m.anio}));
-    });
+    // Cargar resumen múltiple + pagos (gastos y cuotas) de los 12 meses en 2 llamadas
+    var promesas=[
+      api({action:"getResumenMultiple",meses:JSON.stringify(mesesArray)}),
+      api({action:"getPagosMultiple",meses:JSON.stringify(mesesArray)})
+    ];
     var resultados=await Promise.all(promesas);
     var resResp=resultados[0];
     if(resResp.ok && resResp.data){
@@ -251,21 +251,20 @@ async function precargarTendencia(){
         }
       });
     }
-    // Asignar movimientos a cada mes
-    mesesArray.forEach(function(m,i){
-      var movResp=resultados[i+1];
-      if(movResp&&movResp.ok&&movResp.data){
-        var d=new Date(m.anio,["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"].indexOf(m.mes),1);
-        var clave=m.anio+"-"+String(d.getMonth()+1).padStart(2,"0");
-        if(cache[clave]){
-          cache[clave].gastos=movResp.data;
-          // Agregar Arriendo sintetico
-          if(cache[clave].totales["Arriendo"]>0){
-            cache[clave].gastos.push({monto:cache[clave].totales["Arriendo"],categoria:"Arriendo",origen:"Arriendo",comentario:"",fecha:m.anio+"-"+String(d.getMonth()+1).padStart(2,"0")+"-01T00:00:00.000Z"});
-          }
+    // Asignar pagos (gastos + cuotas) a cada mes
+    var pagosResp=resultados[1];
+    if(pagosResp&&pagosResp.ok&&pagosResp.data){
+      Object.entries(pagosResp.data).forEach(function(entry){
+        var clave=entry[0]; var pagos=entry[1]||[];
+        if(!cache[clave]) return;
+        cache[clave].gastos=pagos.filter(function(p){return (p.cuotaNum||1)<=1;});
+        cache[clave].cuotas=pagos.filter(function(p){return (p.cuotaNum||1)>=2;});
+        // Agregar Arriendo sintetico
+        if(cache[clave].totales["Arriendo"]>0){
+          cache[clave].gastos.push({monto:cache[clave].totales["Arriendo"],categoria:"Arriendo",origen:"Arriendo",comentario:"",fecha:clave+"-01T00:00:00.000Z"});
         }
-      }
-    });
+      });
+    }
     renderChart();
   }catch(err){ console.log("Error precargando:",err); }
 }
@@ -450,13 +449,14 @@ function renderChart(){
     borderColor:"#e8edf5",backgroundColor:"#e8edf5",tension:0.3,pointRadius:3,borderWidth:2,fill:false
   }];
   if(filtroCatVal){
+    var sumaCatMes=function(mc){
+      return ((mc||{}).gastos||[]).concat((mc||{}).cuotas||[]).filter(function(g){
+        return g.categoria===filtroCatVal&&(!filtroOrigenVal||g.origen===filtroOrigenVal);
+      }).reduce(function(a,g){return a+g.monto;},0);
+    };
     datasets.push({
       label:filtroCatVal,
-      data:claves.map(function(c){
-        return ((cache[c]||{}).gastos||[]).filter(function(g){
-          return g.categoria===filtroCatVal&&(!filtroOrigenVal||g.origen===filtroOrigenVal);
-        }).reduce(function(a,g){return a+g.monto;},0);
-      }),
+      data:claves.map(function(c){ return sumaCatMes(cache[c]); }),
       borderColor:color(filtroCatVal),backgroundColor:color(filtroCatVal),tension:0.3,pointRadius:3,borderWidth:1.5,fill:false
     });
   }
@@ -491,13 +491,16 @@ function renderChart(){
   });
   var hist=document.getElementById("resumenHist");
   if(filtroCatVal&&Object.keys(cache).length>0){
-    var totalAcum=Object.values(cache).reduce(function(a,d){
-      return a+((d.gastos||[]).filter(function(g){return g.categoria===filtroCatVal&&(!filtroOrigenVal||g.origen===filtroOrigenVal);}).reduce(function(s,g){return s+g.monto;},0));
-    },0);
+    var sumaHist=function(mc){
+      return ((mc||{}).gastos||[]).concat((mc||{}).cuotas||[]).filter(function(g){
+        return g.categoria===filtroCatVal&&(!filtroOrigenVal||g.origen===filtroOrigenVal);
+      }).reduce(function(a,g){return a+g.monto;},0);
+    };
+    var totalAcum=Object.values(cache).reduce(function(a,d){ return a+sumaHist(d); },0);
     var hh="<div style='border-top:1px solid var(--line);padding-top:12px;margin-top:12px;'>";
     hh+="<div style='display:flex;justify-content:space-between;font-weight:700;font-size:13px;margin-bottom:8px;color:"+color(filtroCatVal)+"'><span>"+filtroCatVal+"</span><span>"+fmt(totalAcum)+" total</span></div>";
     claves.forEach(function(c){
-      var m=((cache[c]||{}).gastos||[]).filter(function(g){return g.categoria===filtroCatVal&&(!filtroOrigenVal||g.origen===filtroOrigenVal);}).reduce(function(a,g){return a+g.monto;},0);
+      var m=sumaHist(cache[c]);
       if(!m) return;
       var p=c.split("-");
       hh+="<div class='hist-row'><span>"+MESES[parseInt(p[1])-1]+" "+p[0]+"</span><span>"+fmt(m)+"</span></div>";
