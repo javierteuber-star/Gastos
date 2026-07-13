@@ -131,6 +131,7 @@
     <input type="file" id="fotoInput" accept="image/*" style="display:none">
     <div id="fotoStatus"></div>
     <div class="form-agregar">
+      <select id="tipoInput" style="width:100%"><option value="gasto">Gasto</option><option value="abono">Abono / reverso</option></select>
       <input type="number" id="montoInput" placeholder="$" inputmode="numeric">
       <select id="catInput"><option value="Almuerzo">Almuerzo</option><option value="Auto">Auto</option><option value="Bienestar">Bienestar</option><option value="Casa">Casa</option><option value="Comida - Casa">Comida - Casa</option><option value="Cuidadora">Cuidadora</option><option value="Cuota Auto">Cuota Auto</option><option value="Estacionamiento">Estacionamiento</option><option value="Farmacia">Farmacia</option><option value="Financieros">Financieros</option><option value="Fondo Reserva">Fondo Reserva</option><option value="Gasto Comun">Gasto Comun</option><option value="Giro Cajero">Giro Cajero</option><option value="Luna de miel">Luna de miel</option><option value="Matrimonio">Matrimonio</option><option value="Movistar">Movistar</option><option value="Nana">Nana</option><option value="Ocio">Ocio</option><option value="Otros">Otros</option><option value="Pedir Comida">Pedir Comida</option><option value="Perros">Perros</option><option value="Regalos">Regalos</option><option value="Ropa">Ropa</option><option value="Seguro Auto">Seguro Auto</option><option value="Sueldo">Sueldo</option><option value="Taxi">Taxi</option><option value="Unicef">Unicef</option><option value="Viajes">Viajes</option></select>
       <select id="origenInput"><option value="TC Santander">TC Santander</option><option value="TC CMR">TC CMR</option><option value="TC Cencosud">TC Cencosud</option><option value="Manuales">Manuales</option></select>
@@ -573,6 +574,7 @@ document.getElementById("btnGuardar").addEventListener("click",function(){
 
 document.getElementById("btnAgregar").addEventListener("click",async function(){
   var monto=parseFloat(document.getElementById("montoInput").value);
+  var tipo=document.getElementById("tipoInput").value;
   var cat=document.getElementById("catInput").value;
   var origen=document.getElementById("origenInput").value;
   var comentario=document.getElementById("comentarioInput").value.trim();
@@ -594,11 +596,13 @@ document.getElementById("btnAgregar").addEventListener("click",async function(){
       total:monto,
       cuotas:cuotas,
       concepto:cat,
+      tipo:tipo,
       mesInicioIdx:mesActual-1,
       anioInicio:anioActual
     });
     if(!res.ok) throw new Error(res.error||"Error guardando");
-    datosMes.gastos.unshift({monto:Math.round(monto/cuotas),montoTotal:monto,categoria:cat,origen:origen,comentario:comentario,fecha:hoy.toISOString(),cuotas:cuotas});
+    var signoLocal=(tipo==="abono")?-1:1;
+    datosMes.gastos.unshift({monto:signoLocal*Math.round(monto/cuotas),montoTotal:monto,categoria:cat,origen:origen,comentario:comentario,fecha:hoy.toISOString(),cuotas:cuotas});
     document.getElementById("montoInput").value="";
     document.getElementById("comentarioInput").value="";
     document.getElementById("cuotasInput").value="1";
