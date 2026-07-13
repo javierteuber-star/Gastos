@@ -54,6 +54,7 @@
   .flag.up{color:var(--bad);}
   .flag.down{color:var(--good);}
   .flag.flat{color:var(--muted);font-weight:600;}
+  .prom{display:block;font-size:9px;color:var(--muted);font-weight:500;margin-top:1px;}
   .fut-barras{display:flex;align-items:flex-end;gap:8px;height:120px;margin-bottom:4px;}
   .fut-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;height:100%;cursor:pointer;}
   .fut-monto{font-size:9.5px;color:var(--cuota);font-weight:700;font-variant-numeric:tabular-nums;}
@@ -517,9 +518,10 @@ function render(){
       if(avg<1000) return "";
       var d=(e.total-avg)/avg;
       var pct=Math.min(999,Math.round(Math.abs(d)*100));
-      if(d>0.10) return '<span class="flag up">▲'+pct+'%</span>';
-      if(d<-0.10) return '<span class="flag down">▼'+pct+'%</span>';
-      return '<span class="flag flat">≈</span>';
+      var icono='<span class="flag flat">≈</span>';
+      if(d>0.10) icono='<span class="flag up">▲'+pct+'%</span>';
+      else if(d<-0.10) icono='<span class="flag down">▼'+pct+'%</span>';
+      return icono+'<span class="prom">prom '+fmt(avg)+'</span>';
     };
     var totMes=0,totCuo=0;
     var bh='<div class="cat-table">';
