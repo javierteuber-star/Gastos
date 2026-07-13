@@ -382,6 +382,7 @@ function fechaCorta(iso){
 function fmtM(n){ return "$"+Math.round(n/1000).toLocaleString("es-CL")+"M"; }
 
 var futuros={}, futSel="";
+var CATS_FIJAS=["gasto comun","cuidadora","nana","seguro auto","fondo reserva"];
 async function cargarFuturos(){
   var mesesFut=[];
   for(var i=1;i<=6;i++){
@@ -391,7 +392,14 @@ async function cargarFuturos(){
   futuros={}; futSel="";
   try{
     var r=await api({action:"getPagosMultiple",meses:JSON.stringify(mesesFut)});
-    if(r&&r.ok&&r.data) futuros=r.data;
+    if(r&&r.ok&&r.data){
+      Object.entries(r.data).forEach(function(entry){
+        // Solo deuda pactada en cuotas: fuera gastos fijos recurrentes
+        futuros[entry[0]]=(entry[1]||[]).filter(function(p){
+          return CATS_FIJAS.indexOf(String(p.categoria||"").trim().toLowerCase())===-1;
+        });
+      });
+    }
   }catch(e){ console.log("Error cargando futuros:",e); }
   renderFuturo();
 }
