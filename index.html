@@ -38,7 +38,7 @@
   .filtros select{flex:1;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:14px;background:var(--card2);color:var(--ink);}
   /* Tabla de categorías 4 columnas */
   .cat-table{margin-top:16px;border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:12px;}
-  .cat-trow{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;padding:9px 10px;border-bottom:1px solid var(--line);align-items:center;cursor:pointer;}
+  .cat-trow{display:grid;grid-template-columns:1.35fr .95fr .95fr 1.2fr;padding:9px 10px;border-bottom:1px solid var(--line);align-items:center;cursor:pointer;}
   .cat-trow:last-child{border-bottom:none;}
   .cat-trow.header{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.4px;cursor:default;background:var(--card2);font-weight:700;}
   .cat-trow .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
@@ -50,6 +50,22 @@
   .cat-trow.subtotal{background:var(--card2);font-weight:700;border-top:2px solid var(--line);cursor:default;}
   .cat-cuota-col{color:var(--cuota);}
   .nota-cuotas{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.4;}
+  .flag{font-size:10px;font-weight:800;margin-left:5px;}
+  .flag.up{color:var(--bad);}
+  .flag.down{color:var(--good);}
+  .flag.flat{color:var(--muted);font-weight:600;}
+  .fut-barras{display:flex;align-items:flex-end;gap:8px;height:120px;margin-bottom:4px;}
+  .fut-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;height:100%;cursor:pointer;}
+  .fut-monto{font-size:9.5px;color:var(--cuota);font-weight:700;font-variant-numeric:tabular-nums;}
+  .fut-bar{width:100%;background:linear-gradient(180deg,rgba(255,183,77,.55),rgba(255,183,77,.25));border-radius:5px 5px 0 0;border:1px solid transparent;}
+  .fut-bar.sel{background:linear-gradient(180deg,rgba(255,183,77,.95),rgba(255,183,77,.55));border-color:var(--cuota);}
+  .fut-mes{font-size:10px;color:var(--muted);margin-top:2px;}
+  .fut-anio{font-size:9px;color:var(--muted);opacity:.7;}
+  .fut-nota{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;}
+  .fut-lista{margin-top:12px;border-top:1px solid var(--line);padding-top:10px;}
+  .fut-item{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:6px 0;color:var(--muted);}
+  .fut-item b{color:var(--ink);font-weight:600;}
+  .fut-item .m{color:var(--cuota);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}
   .punto{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
   .lista{list-style:none;padding:0;margin-top:4px;}
   .lista li{display:flex;justify-content:space-between;align-items:center;padding:13px 0 13px 8px;border-bottom:1px solid var(--line);font-size:15px;}
@@ -125,6 +141,7 @@
     <canvas id="chart" height="220" style="cursor:pointer"></canvas>
     <div id="resumenHist"></div>
   </div>
+  <div class="panel" id="panelFuturo"><div class="vacio">Cargando...</div></div>
   <div class="panel">
     <h3>Agregar Input</h3>
     <button class="btn-foto" id="btnFoto">📷 Cargar desde foto</button>
@@ -347,6 +364,7 @@ async function cargarMes(){
     }
     cache[anioActual+"-"+String(mesActual).padStart(2,"0")]=JSON.parse(JSON.stringify(datosMes));
     render();
+    cargarFuturos();
     status("","");
   }catch(err){
     console.error(err);
@@ -360,6 +378,69 @@ function fechaCorta(iso){
   if(isNaN(f)) return "";
   return f.getDate()+" "+MESES[f.getMonth()].slice(0,3)+" "+f.getFullYear().toString().slice(2);
 }
+
+function fmtM(n){ return "$"+Math.round(n/1000).toLocaleString("es-CL")+"M"; }
+
+var futuros={}, futSel="";
+async function cargarFuturos(){
+  var mesesFut=[];
+  for(var i=1;i<=6;i++){
+    var d=new Date(anioActual,mesActual-1+i,1);
+    mesesFut.push({mes:MESES[d.getMonth()],anio:d.getFullYear()});
+  }
+  futuros={}; futSel="";
+  try{
+    var r=await api({action:"getPagosMultiple",meses:JSON.stringify(mesesFut)});
+    if(r&&r.ok&&r.data) futuros=r.data;
+  }catch(e){ console.log("Error cargando futuros:",e); }
+  renderFuturo();
+}
+
+function renderFuturo(){
+  var el=document.getElementById("panelFuturo");
+  var claves=Object.keys(futuros).sort();
+  var conDatos=claves.filter(function(c){return (futuros[c]||[]).length>0;});
+  var h='<h3>Compromisos futuros en cuotas</h3>';
+  if(conDatos.length===0){
+    el.innerHTML=h+'<div class="vacio">Sin cuotas comprometidas en los próximos 6 meses 🎉</div>';
+    return;
+  }
+  var tot={}; var max=0;
+  claves.forEach(function(c){
+    var s=(futuros[c]||[]).reduce(function(a,p){return a+p.monto;},0);
+    tot[c]=s; if(s>max)max=s;
+  });
+  if(!futSel||claves.indexOf(futSel)===-1) futSel=claves[0];
+  h+='<div class="fut-barras">';
+  claves.forEach(function(c){
+    var p=c.split("-"); var mIdx=parseInt(p[1])-1;
+    var alt=max>0?Math.max(4,Math.round(tot[c]/max*100)):4;
+    h+='<div class="fut-col" data-fut="'+c+'">'+
+      '<span class="fut-monto">'+fmtM(tot[c])+'</span>'+
+      '<div class="fut-bar'+(futSel===c?" sel":"")+'" style="height:'+alt+'%"></div>'+
+      '<span class="fut-mes">'+MESES[mIdx].slice(0,3)+'</span>'+
+      '<span class="fut-anio">'+p[0]+'</span></div>';
+  });
+  h+='</div><div class="fut-nota">Plata ya comprometida en cuotas de compras pasadas. Toca una barra para ver su detalle.</div>';
+  var lista=(futuros[futSel]||[]).slice().sort(function(a,b){return b.monto-a.monto;});
+  var ps=futSel.split("-");
+  h+='<div class="fut-lista">';
+  h+='<div class="fut-item"><span><b>'+MESES[parseInt(ps[1])-1]+' '+ps[0]+'</b> · '+lista.length+' pago'+(lista.length===1?"":"s")+'</span><span class="m">'+fmt(tot[futSel]||0)+'</span></div>';
+  lista.slice(0,40).forEach(function(p){
+    var nom=(p.comentario||p.categoria).slice(0,34);
+    var cu=(p.cuotas&&p.cuotas>1)?(" — cuota "+p.cuotaNum+" de "+p.cuotas):"";
+    h+='<div class="fut-item"><span>'+nom+cu+'</span><span class="m">'+fmt(p.monto)+'</span></div>';
+  });
+  if(lista.length>40) h+='<div class="fut-item"><span>... y '+(lista.length-40)+' más</span></div>';
+  h+='</div>';
+  el.innerHTML=h;
+}
+document.getElementById("panelFuturo").addEventListener("click",function(e){
+  var col=e.target.closest("[data-fut]");
+  if(!col) return;
+  futSel=col.getAttribute("data-fut");
+  renderFuturo();
+});
 
 function render(){
   var d=datosMes;
@@ -413,6 +494,25 @@ function render(){
   if(entCat.length===0){
     breakdown.innerHTML='<div class="vacio">Sin gastos este mes.</div>';
   } else {
+    // Promedio de los últimos 6 meses previos para señal de anomalía
+    var claveAct=anioActual+"-"+String(mesActual).padStart(2,"0");
+    var prev6=Object.keys(cache).filter(function(c){return c<claveAct;}).sort().slice(-6);
+    var sumCatMes=function(mc,cat){
+      return ((mc||{}).gastos||[]).concat((mc||{}).cuotas||[]).filter(function(g){
+        return g.categoria===cat&&(!filtroOrigenVal||g.origen===filtroOrigenVal);
+      }).reduce(function(a,g){return a+g.monto;},0);
+    };
+    var flagDe=function(e){
+      if(prev6.length<3) return "";
+      var suma=0; prev6.forEach(function(c){ suma+=sumCatMes(cache[c],e.cat); });
+      var avg=suma/prev6.length;
+      if(avg<1000) return "";
+      var d=(e.total-avg)/avg;
+      var pct=Math.min(999,Math.round(Math.abs(d)*100));
+      if(d>0.10) return '<span class="flag up">▲'+pct+'%</span>';
+      if(d<-0.10) return '<span class="flag down">▼'+pct+'%</span>';
+      return '<span class="flag flat">≈</span>';
+    };
     var totMes=0,totCuo=0;
     var bh='<div class="cat-table">';
     bh+='<div class="cat-trow header"><div>Categoría</div><div class="num">Del mes</div><div class="num">Cuotas ant.</div><div class="num">Total</div></div>';
@@ -423,10 +523,11 @@ function render(){
         '<div class="cnom"><div class="punto" style="background:'+color(e.cat)+'"></div><span>'+e.cat+'</span></div>'+
         '<div class="num">'+fmt(e.mes)+'</div>'+
         '<div class="num'+(e.cuotas>0?" cat-cuota-col":"")+'">'+fmt(e.cuotas)+'</div>'+
-        '<div class="num tot">'+fmt(e.total)+'</div></div>';
+        '<div class="num tot">'+fmt(e.total)+flagDe(e)+'</div></div>';
     });
     bh+='<div class="cat-trow subtotal"><div>Total</div><div class="num">'+fmt(totMes)+'</div><div class="num'+(totCuo>0?" cat-cuota-col":"")+'">'+fmt(totCuo)+'</div><div class="num tot">'+fmt(totMes+totCuo)+'</div></div>';
     bh+='</div>';
+    if(prev6.length>=3) bh+='<div class="nota-cuotas"><span style="color:var(--bad);font-weight:700">▲</span> sobre tu promedio de los últimos '+prev6.length+' meses · <span style="color:var(--good);font-weight:700">▼</span> bajo el promedio · ≈ normal (±10%)</div>';
     if(!cuotasOk) bh+='<div class="nota-cuotas">⚠️ Cuotas de meses anteriores no disponibles: falta actualizar el Apps Script (acción getCuotas).</div>';
     breakdown.innerHTML=bh;
   }
