@@ -89,8 +89,6 @@
   .form-agregar input[type=text]{flex:1.2;min-width:130px;}
   .form-agregar input[type=date]{color-scheme:dark;}
   .form-agregar button.submit{width:100%;border:none;background:var(--accent);color:#0e1420;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;}
-  .btn-foto{width:100%;border:2px dashed var(--line);background:none;border-radius:10px;padding:11px;font-size:14px;color:var(--muted);margin-bottom:12px;font-weight:600;cursor:pointer;}
-  #fotoStatus{font-size:13px;color:var(--muted);text-align:center;min-height:18px;margin-bottom:8px;}
   .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:200;}
   .modal-bg.show{display:flex;}
   .modal{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:22px;width:100%;max-width:340px;}
@@ -145,9 +143,6 @@
   <div class="panel" id="panelFuturo"><div class="vacio">Cargando...</div></div>
   <div class="panel">
     <h3>Agregar Input</h3>
-    <button class="btn-foto" id="btnFoto">📷 Cargar desde foto</button>
-    <input type="file" id="fotoInput" accept="image/*" style="display:none">
-    <div id="fotoStatus"></div>
     <div class="form-agregar">
       <select id="tipoInput" style="width:100%"><option value="gasto">Gasto</option><option value="abono">Abono / reverso</option></select>
       <input type="number" id="montoInput" placeholder="$" inputmode="numeric">
@@ -404,7 +399,7 @@ var futuros={}, futSel="";
 var CATS_FIJAS=["gasto comun","cuidadora","nana","seguro auto","fondo reserva"];
 async function cargarFuturos(){
   var mesesFut=[];
-  for(var i=1;i<=6;i++){
+  for(var i=0;i<=6;i++){
     var d=new Date(anioActual,mesActual-1+i,1);
     mesesFut.push({mes:MESES[d.getMonth()],anio:d.getFullYear()});
   }
@@ -414,8 +409,10 @@ async function cargarFuturos(){
     if(r&&r.ok&&r.data){
       Object.entries(r.data).forEach(function(entry){
         // Solo deuda pactada en cuotas: fuera gastos fijos recurrentes
+        var esMesActual=entry[0]===anioActual+"-"+String(mesActual).padStart(2,"0");
         futuros[entry[0]]=(entry[1]||[]).filter(function(p){
-          return CATS_FIJAS.indexOf(String(p.categoria||"").trim().toLowerCase())===-1;
+          if(CATS_FIJAS.indexOf(String(p.categoria||"").trim().toLowerCase())!==-1) return false;
+          return !esMesActual||(p.cuotas&&p.cuotas>1);
         });
       });
     }
@@ -746,34 +743,6 @@ document.getElementById("btnAgregar").addEventListener("click",async function(){
   }
 });
 
-document.getElementById("btnFoto").addEventListener("click",function(){ document.getElementById("fotoInput").click(); });
-document.getElementById("fotoInput").addEventListener("change",async function(e){
-  var file=e.target.files[0]; if(!file) return;
-  var statusEl=document.getElementById("fotoStatus");
-  statusEl.textContent="⏳ Analizando foto...";
-  try{
-    var base64=await new Promise(function(res,rej){
-      var r=new FileReader(); r.onload=function(){res(r.result.split(",")[1]);}; r.onerror=function(){rej(new Error("Error leyendo"));};
-      r.readAsDataURL(file);
-    });
-    var resp=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:400,
-        messages:[{role:"user",content:[
-          {type:"image",source:{type:"base64",media_type:file.type,data:base64}},
-          {type:"text",text:"Analiza esta imagen. Responde SOLO JSON sin backticks: {monto:número entero,categoria:string,comentario:string breve}"}
-        ]}]
-      })
-    });
-    var data=await resp.json();
-    var parsed=JSON.parse(data.content.map(function(i){return i.text||"";}).join("").replace(/```json|```/g,"").trim());
-    if(parsed.monto) document.getElementById("montoInput").value=parsed.monto;
-    if(parsed.categoria) document.getElementById("catInput").value=parsed.categoria;
-    if(parsed.comentario) document.getElementById("comentarioInput").value=parsed.comentario;
-    statusEl.textContent="✅ Datos cargados — revisa y confirma";
-  }catch(err){ statusEl.textContent="❌ No pude leer la foto"; console.error(err); }
-  e.target.value="";
-});
 
 // Setear fecha de hoy por defecto
 var hoyFecha = new Date();
