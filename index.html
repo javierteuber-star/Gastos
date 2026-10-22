@@ -217,15 +217,33 @@ function status(msg,tipo){
   if(tipo==="ok"||tipo==="error") setTimeout(function(){bar.className="status-bar";},3000);
 }
 
-async function api(params){
-  params.token="javi2026gastos"; var qs=Object.entries(params).map(function(e){return encodeURIComponent(e[0])+"="+encodeURIComponent(e[1]);}).join("&");
-  var r=await fetch(SCRIPT_URL+"?"+qs);
-  return await r.json();
+function getToken(forzar){
+  var t=null;
+  try{ t=localStorage.getItem("gastos_token"); }catch(e){}
+  if(!t||forzar){
+    t=prompt("Ingresa tu clave de acceso:")||"";
+    try{ if(t) localStorage.setItem("gastos_token",t); }catch(e){}
+  }
+  return t;
 }
 
-async function apiPost(body){
-  body.token="javi2026gastos"; var r=await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(body)});
-  return await r.json();
+function tokenInvalido(j){
+  return j&&j.error&&/token|autoriz|clave|unauthor/i.test(String(j.error));
+}
+
+async function api(params,reintento){
+  params.token=getToken(); var qs=Object.entries(params).map(function(e){return encodeURIComponent(e[0])+"="+encodeURIComponent(e[1]);}).join("&");
+  var r=await fetch(SCRIPT_URL+"?"+qs);
+  var j=await r.json();
+  if(tokenInvalido(j)&&!reintento){ getToken(true); return api(params,true); }
+  return j;
+}
+
+async function apiPost(body,reintento){
+  body.token=getToken(); var r=await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(body)});
+  var j=await r.json();
+  if(tokenInvalido(j)&&!reintento){ getToken(true); return apiPost(body,true); }
+  return j;
 }
 
 // Selectores mes/año
