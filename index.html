@@ -409,10 +409,9 @@ async function cargarFuturos(){
     if(r&&r.ok&&r.data){
       Object.entries(r.data).forEach(function(entry){
         // Solo deuda pactada en cuotas: fuera gastos fijos recurrentes
-        var esMesActual=entry[0]===anioActual+"-"+String(mesActual).padStart(2,"0");
         futuros[entry[0]]=(entry[1]||[]).filter(function(p){
           if(CATS_FIJAS.indexOf(String(p.categoria||"").trim().toLowerCase())!==-1) return false;
-          return !esMesActual||(p.cuotas&&p.cuotas>1);
+          return p.cuotas&&p.cuotas>1;
         });
       });
     }
