@@ -21,7 +21,46 @@
   .picker-item:hover{background:var(--card);}
   .picker-item.activo{font-weight:800;color:var(--accent);}
   main{max-width:480px;margin:0 auto;padding:0 20px;}
-  .panel{margin-top:22px;padding:22px;background:var(--card);border:1px solid var(--line);border-radius:14px;}
+  body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:
+    radial-gradient(40% 28% at 10% 6%, rgba(79,195,247,.34), transparent 70%),
+    radial-gradient(36% 26% at 95% 28%, rgba(125,156,192,.32), transparent 70%),
+    radial-gradient(42% 30% at 15% 60%, rgba(102,187,106,.18), transparent 70%),
+    radial-gradient(44% 32% at 88% 90%, rgba(154,130,208,.26), transparent 70%);}
+  .vidrio,.panel{background:rgba(23,31,46,.55);border:1px solid rgba(255,255,255,.08);border-radius:18px;backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);box-shadow:0 10px 30px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.06);}
+  .panel{margin-top:16px;padding:22px;}
+  /* Tarjetas resumen */
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px;}
+  .kpi{padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0;container-type:inline-size;}
+  .kpi-lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;}
+  .kpi-num{font-size:20px;font-size:min(22px,15cqi);font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:-.01em;}
+  .kpi-sub{font-size:12px;color:var(--muted);line-height:1.35;}
+  .kpi-sub .up{color:var(--bad);font-weight:700;} .kpi-sub .down{color:var(--good);font-weight:700;}
+  .kpi-fue{grid-column:1/-1;flex-direction:row;align-items:center;gap:18px;}
+  .kpi-fue .txt{display:flex;flex-direction:column;gap:6px;min-width:0;}
+  .kpi-fue .kpi-num{font-size:26px;font-size:min(28px,8cqi);}
+  .meta-linea{border-top:1px solid var(--line);padding-top:6px;margin-top:2px;}
+  .anillo-wrap{position:relative;width:108px;height:108px;flex-shrink:0;}
+  .anillo-wrap svg{width:100%;height:100%;display:block;}
+  .anillo-val{animation:llena 1.3s cubic-bezier(.2,.7,.2,1) .15s both;}
+  @keyframes llena{from{stroke-dashoffset:var(--c)}}
+  .anillo-centro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .anillo-centro b{font-size:24px;font-weight:800;}
+  .anillo-centro span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+  /* Pregúntame algo */
+  .preg-form{display:flex;gap:8px;}
+  .preg-form input{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px;background:rgba(29,39,56,.7);color:var(--ink);}
+  .preg-form input::placeholder{color:var(--muted);}
+  .preg-form button{border:none;background:var(--accent);color:#0e1420;border-radius:12px;width:48px;font-size:20px;font-weight:800;cursor:pointer;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .chips button{border:1px solid var(--line);background:rgba(29,39,56,.6);color:var(--ink);border-radius:16px;padding:6px 11px;font-size:12px;cursor:pointer;}
+  .chips button:hover{border-color:var(--accent);color:var(--accent);}
+  .respuestas{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
+  .resp{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:5px;animation:aparece .35s ease both;}
+  .resp .q{font-size:12px;color:var(--muted);}
+  .resp .a{font-size:14px;line-height:1.5;}
+  .resp .a b{color:var(--accent);}
+  @keyframes aparece{from{opacity:.2;transform:translateY(6px)}}
+  @media (prefers-reduced-motion:reduce){.anillo-val,.resp{animation:none;}}
   .panel h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 14px;font-weight:700;}
   .dato-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);}
   .dato-row:last-child{border-bottom:none;}
@@ -125,8 +164,14 @@
   <div class="picker-overlay" id="overlayAnio"><div class="picker-box" id="pickerAnio"></div></div>
 </header>
 <main>
+  <section class="kpis" id="panelKpi"></section>
+  <div class="panel" id="panelPregunta">
+    <h3>Pregúntame algo</h3>
+    <form class="preg-form" id="pregForm"><input type="text" id="pregInput" placeholder="¿Cuánto gasté en Almuerzo en agosto?" autocomplete="off"><button type="submit" aria-label="Preguntar">↑</button></form>
+    <div class="chips" id="pregChips"></div>
+    <div class="respuestas" id="pregResp"></div>
+  </div>
   <div class="panel" id="panelResumen"><div class="vacio">Conectando...</div></div>
-  <div class="panel" id="panelFue"></div>
   <div class="panel">
     <h3>Gastos por categoría</h3>
     <div class="filtros">
@@ -482,11 +527,7 @@ function render(){
 
   var diff=ahorroReal-meta;
   var sub=meta>0?(diff>=0?"Superaste tu meta por "+fmt(diff):"Te faltaron "+fmt(Math.abs(diff))+" para tu meta"):"Define una meta de ahorro para comparar";
-  document.getElementById("panelFue").innerHTML=
-    '<h3>Cómo te fue</h3><div class="resultado">'+
-    '<div class="monto" style="color:'+(ahorroReal<0?"var(--bad)":"var(--ink)")+'">'+fmt(ahorroReal)+'</div>'+
-    '<div class="lbl">ahorro real este mes</div><div class="sub">'+sub+'</div></div>'+
-    '<div class="barra-bg"><div class="barra-fill" style="width:'+pct+'%;background:'+barColor+'"></div></div>';
+  renderKpis(d,ahorroReal,meta,sub);
 
   var origenes=[...new Set(d.gastos.concat(d.cuotas||[]).map(function(g){return g.origen;}).filter(Boolean))].sort();
   var gastosFiltOrigen=filtroOrigenVal?d.gastos.filter(function(g){return g.origen===filtroOrigenVal;}):d.gastos;
@@ -742,6 +783,134 @@ document.getElementById("btnAgregar").addEventListener("click",async function(){
   }
 });
 
+
+function claveDe(dt){ return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0"); }
+function nombreClave(k){ var p=k.split("-"); return MESES[parseInt(p[1])-1].toLowerCase()+" "+p[0]; }
+
+function renderKpis(d,ahorro,meta,sub){
+  var gastoTotal=d.gastoTotal||0, ing=d.ingreso||0;
+  var prevD=new Date(anioActual,mesActual-2,1), ant=cache[claveDe(prevD)];
+  var varTxt="Sin mes anterior para comparar";
+  if(ant&&ant.gastoTotal>0){
+    var dv=(gastoTotal-ant.gastoTotal)/ant.gastoTotal, p=Math.round(Math.abs(dv)*100);
+    varTxt='<span class="'+(dv>0?"up":"down")+'">'+(dv>0?"▲ ":"▼ ")+p+'%</span> vs '+MESES[prevD.getMonth()].slice(0,3);
+  }
+  var pctReal=ing>0?Math.round(ahorro/ing*100):0;
+  var pct=Math.max(0,Math.min(100,pctReal)), lbl=ing>0?"del ingreso":"sin ingreso";
+  var metaTxt=meta>0?("Meta "+fmt(meta)+" · "+(ahorro>=meta?"la superaste por "+fmt(ahorro-meta):"te faltaron "+fmt(meta-ahorro))+" ("+Math.round(ahorro/meta*100)+"% cumplido)"):"Sin meta de ahorro definida";
+  var C=+(2*Math.PI*44).toFixed(2), off=+(C*(1-pct/100)).toFixed(2);
+  var trazo=ahorro<0?"var(--bad)":(meta>0&&ahorro>=meta?"var(--good)":"url(#gAnillo)");
+  var h='';
+  h+='<div class="kpi vidrio"><span class="kpi-lbl">Gasto del mes</span><span class="kpi-num">'+fmt(gastoTotal)+'</span><span class="kpi-sub">'+varTxt+'</span></div>';
+  h+='<div class="kpi vidrio"><span class="kpi-lbl">Ingreso</span><span class="kpi-num">'+fmt(ing)+'</span><span class="kpi-sub">'+(ing>0?"Gastaste el "+Math.round(gastoTotal/ing*100)+"% del ingreso":"Agrega tu ingreso abajo")+'</span></div>';
+  h+='<div class="kpi vidrio kpi-fue"><div class="anillo-wrap"><svg viewBox="0 0 110 110" aria-hidden="true"><defs><linearGradient id="gAnillo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4fc3f7"/><stop offset="1" stop-color="#66bb6a"/></linearGradient></defs>'+
+     '<circle cx="55" cy="55" r="44" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="10"/>'+
+     '<circle class="anillo-val" cx="55" cy="55" r="44" fill="none" stroke="'+trazo+'" stroke-width="10" stroke-linecap="round" transform="rotate(-90 55 55)" style="stroke-dasharray:'+C+';stroke-dashoffset:'+off+';--c:'+C+'"/></svg>'+
+     '<div class="anillo-centro"><b>'+pct+'%</b><span>'+lbl+'</span></div></div>'+
+     '<div class="txt"><span class="kpi-lbl">Cómo te fue</span><span class="kpi-num" style="color:'+(ahorro<0?"var(--bad)":"var(--ink)")+'">'+fmt(ahorro)+'</span><span class="kpi-sub">'+(ing>0?"Ahorraste el "+pctReal+"% de tu ingreso.":"Ahorro real del mes.")+'</span><span class="kpi-sub meta-linea">'+metaTxt+'</span></div></div>';
+  document.getElementById("panelKpi").innerHTML=h;
+}
+
+// ---- Pregúntame algo: respuestas por categoría y mes, con los datos ya cargados ----
+function sinTilde(s){ return String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,""); }
+function escRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"); }
+var SINONIMOS={"delivery":"Pedir Comida","rappi":"Pedir Comida","uber eats":"Pedir Comida","supermercado":"Comida - Casa","super":"Comida - Casa","comida casa":"Comida - Casa","uber":"Taxi","cabify":"Taxi","bencina":"Auto","perro":"Perros","telefono":"Movistar","celular":"Movistar","remedios":"Farmacia","almuerzos":"Almuerzo","viaje":"Viajes","regalo":"Regalos","estacionamientos":"Estacionamiento"};
+var NUMS={un:1,uno:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10,once:11};
+function buscarCategoria(t){
+  var cands=TODAS_CATS.map(function(c){return [sinTilde(c),c];});
+  Object.keys(SINONIMOS).forEach(function(k){ cands.push([k,SINONIMOS[k]]); });
+  cands.sort(function(a,b){return b[0].length-a[0].length;});
+  for(var i=0;i<cands.length;i++){ if(new RegExp("(^|[^a-z])"+escRe(cands[i][0])+"([^a-z]|$)").test(t)) return cands[i][1]; }
+  return null;
+}
+function buscarMes(t){
+  var m=t.match(/hace\s+(\d+|un|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once)\s+mes/);
+  if(m){ var n=/\d/.test(m[1])?parseInt(m[1]):NUMS[m[1]]; return new Date(anioActual,mesActual-1-n,1); }
+  if(/mes (pasado|anterior)/.test(t)) return new Date(anioActual,mesActual-2,1);
+  var y=t.match(/\b(20\d\d)\b/);
+  for(var i=0;i<12;i++){
+    var nom=sinTilde(MESES[i]), corto=nom.slice(0,3);
+    if(new RegExp("\\b"+nom+"\\b").test(t)||(corto!=="mar"&&new RegExp("\\b"+corto+"\\b").test(t))){
+      var anio=y?parseInt(y[1]):(i+1<=mesActual?anioActual:anioActual-1);
+      return new Date(anio,i,1);
+    }
+  }
+  return null;
+}
+function movsCat(mc,cat){ return ((mc||{}).gastos||[]).concat((mc||{}).cuotas||[]).filter(function(g){return g.categoria===cat;}); }
+function sumCat(mc,cat){ return movsCat(mc,cat).reduce(function(a,g){return a+g.monto;},0); }
+function promedioPrevio(k,cat){
+  var prev=Object.keys(cache).filter(function(c){return c<k;}).sort().slice(-6);
+  if(prev.length<3) return null;
+  return {avg:prev.reduce(function(a,c){return a+(cat?sumCat(cache[c],cat):(cache[c].gastoTotal||0));},0)/prev.length,n:prev.length};
+}
+function compara(v,p){
+  if(!p||p.avg<1000) return "";
+  var d=(v-p.avg)/p.avg;
+  var txt=Math.abs(d)<=0.10?"en línea con":(d>0?Math.round(d*100)+"% sobre":Math.round(-d*100)+"% bajo");
+  return " Eso está "+txt+" tu promedio de los "+p.n+" meses anteriores ("+fmt(p.avg)+").";
+}
+function responder(q){
+  var t=sinTilde(q);
+  var dt=buscarMes(t)||new Date(anioActual,mesActual-1,1);
+  var k=claveDe(dt), nom=nombreClave(k), mc=cache[k];
+  var cat=buscarCategoria(t);
+  if(/cuota/.test(t)&&/(futur|comprometid|proxim|debo|pendiente|vien)/.test(t)){
+    var ks=Object.keys(futuros).sort();
+    if(!ks.length) return "Todavía estoy cargando tus cuotas futuras. Prueba en unos segundos.";
+    if(futuros[k]&&k!==claveDe(new Date(anioActual,mesActual-1,1))){
+      var s=(futuros[k]||[]).reduce(function(a,p){return a+p.monto;},0);
+      return "Para "+nom+" tienes <b>"+fmt(s)+"</b> comprometidos en "+futuros[k].length+" cuota"+(futuros[k].length===1?"":"s")+".";
+    }
+    var tot=0, det=[];
+    ks.forEach(function(c){ var s=(futuros[c]||[]).reduce(function(a,p){return a+p.monto;},0); tot+=s; if(s) det.push(MESES[parseInt(c.split("-")[1])-1].slice(0,3)+" "+fmt(s)); });
+    return "En los próximos meses tienes <b>"+fmt(tot)+"</b> comprometidos en cuotas: "+det.join(" · ")+".";
+  }
+  if(!mc) return "No tengo cargado "+nom+". Respondo sobre los 12 meses hasta "+nombreClave(claveDe(new Date(anioActual,mesActual-1,1)))+"; para otro período, cambia el mes arriba.";
+  if(/ahorr/.test(t)){
+    var a=mc.ahorro||0, ing=mc.ingreso||0;
+    return "En "+nom+" ahorraste <b>"+fmt(a)+"</b>"+(ing>0?", el "+Math.round(a/ing*100)+"% de tu ingreso":"")+".";
+  }
+  if(/ingres/.test(t)) return "Tu ingreso de "+nom+" fue <b>"+fmt(mc.ingreso||0)+"</b>.";
+  if(cat){
+    if(/promedio/.test(t)){
+      var ult=Object.keys(cache).filter(function(c){return c<=k;}).sort().slice(-6);
+      var av=ult.reduce(function(a,c){return a+sumCat(cache[c],cat);},0)/ult.length;
+      return "En los últimos "+ult.length+" meses hasta "+nom+" gastaste en promedio <b>"+fmt(av)+"</b> al mes en "+cat+".";
+    }
+    var v=sumCat(mc,cat), n=movsCat(mc,cat).length;
+    if(!n) return "En "+nom+" no tienes gastos en "+cat+".";
+    return "En "+nom+" gastaste <b>"+fmt(v)+"</b> en "+cat+" ("+n+" movimiento"+(n===1?"":"s")+")."+compara(v,promedioPrevio(k,cat));
+  }
+  if(/(mas|mayor|top|principal)/.test(t)&&/gast/.test(t)){
+    var por={};
+    ((mc.gastos||[]).concat(mc.cuotas||[])).forEach(function(g){ por[g.categoria]=(por[g.categoria]||0)+g.monto; });
+    var top=Object.entries(por).sort(function(a,b){return b[1]-a[1];}).slice(0,3);
+    if(!top.length) return "No tengo movimientos en "+nom+".";
+    return "En "+nom+" donde más gastaste fue <b>"+top[0][0]+"</b> ("+fmt(top[0][1])+")"+(top.length>1?", luego "+top.slice(1).map(function(e){return e[0]+" ("+fmt(e[1])+")";}).join(" y "):"")+".";
+  }
+  if(/gast/.test(t)) return "En "+nom+" gastaste <b>"+fmt(mc.gastoTotal||0)+"</b> en total."+compara(mc.gastoTotal||0,promedioPrevio(k,null));
+  return null;
+}
+var EJEMPLOS=["¿Cuánto ahorré hace 2 meses?","¿Cuánto gasté en Pedir Comida en agosto?","¿En qué gasté más este mes?","Promedio de Almuerzo","¿Cuánto debo en cuotas futuras?"];
+function preguntar(q){
+  q=String(q||"").trim(); if(!q) return;
+  var r=Object.keys(cache).length?responder(q):"Elige un mes arriba para que cargue tus datos.";
+  if(!r) r="No entendí la pregunta. Pregúntame por una categoría y un mes, por tu ahorro o por tus cuotas. Por ejemplo: ¿cuánto gasté en Taxi en septiembre?";
+  var box=document.getElementById("pregResp");
+  var el=document.createElement("div"); el.className="resp";
+  var qq=document.createElement("div"); qq.className="q"; qq.textContent=q;
+  var aa=document.createElement("div"); aa.className="a"; aa.innerHTML=r;
+  el.appendChild(qq); el.appendChild(aa);
+  box.insertBefore(el,box.firstChild);
+  while(box.children.length>3) box.removeChild(box.lastChild);
+  document.getElementById("pregInput").value="";
+}
+document.getElementById("pregForm").addEventListener("submit",function(e){ e.preventDefault(); preguntar(document.getElementById("pregInput").value); });
+(function(){
+  var c=document.getElementById("pregChips");
+  EJEMPLOS.forEach(function(x){ var b=document.createElement("button"); b.type="button"; b.textContent=x; b.onclick=function(){ preguntar(x); }; c.appendChild(b); });
+})();
 
 // Setear fecha de hoy por defecto
 var hoyFecha = new Date();
